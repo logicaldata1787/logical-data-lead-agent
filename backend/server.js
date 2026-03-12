@@ -1,30 +1,43 @@
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const app = express();
+'use strict';
 
-// Configuration
-const PORT = process.env.PORT || 5000;
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const { Pool } = require('./db/pool');
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const leadRoutes = require('./routes/leads');
+const campaignRoutes = require('./routes/campaigns');
+const unsubscribeRoutes = require('./routes/unsubscribe');
+const emailSettingsRoutes = require('./routes/emailSettings');
+const analyticsRoutes = require('./routes/analytics');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
-const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Middleware
-app.use(cors({ origin: FRONTEND_URL }));
+app.use(helmet());
+app.use(cors());
 app.use(express.json());
 
-// Health endpoint
-app.get('/health', (req, res) => {
-    res.json({ status: 'OK' });
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
 });
+app.use(limiter);
 
-// Example of modular routes
-app.use('/api/auth', require('./routes/auth')); // Auth routes
-
-// Connect to the database (You can use mongoose or any other library)
-// mongoose.connect(DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true })
-//     .then(() => console.log('Database connected'))
-//     .catch(err => console.error('Database connection error:', err));
+// Mount routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/leads', leadRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/unsubscribe', unsubscribeRoutes);
+app.use('/api/email-settings', emailSettingsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
