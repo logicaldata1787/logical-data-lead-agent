@@ -4,7 +4,6 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-app.get('/health', (req, res) => res.json({ ok: true }));;
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const leadRoutes = require('./routes/leads');
@@ -13,7 +12,7 @@ const unsubscribeRoutes = require('./routes/unsubscribe');
 const emailSettingsRoutes = require('./routes/emailSettings');
 const analyticsRoutes = require('./routes/analytics');
 
-const app = express();
+const app = express(app.get('/health', (req, res) => res.json({ ok: true })););
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
