@@ -1,0 +1,1 @@
+{\n  "scripts": {\n    "start": "node backend/server.js",\n    "postinstall": "cd backend && npm install"\n  }\n}
