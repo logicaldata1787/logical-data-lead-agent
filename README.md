@@ -1,5 +1,27 @@
 # logical-data-lead-agent
 
+## Demo UI
+
+A minimal, framework-free UI is served at the root of the application (`/`).
+
+### How to access
+
+Open your Railway deployment URL in a browser:
+
+```
+https://your-app.up.railway.app/
+```
+
+### Features
+
+| Section | Description |
+|---------|-------------|
+| **Status banner** | Fetches `/health` on load and shows service status + a warning banner when Demo Mode is active |
+| **API Explorer** | One-click buttons to call `GET /api/leads`, `GET /api/campaigns`, and `GET /api/analytics` — JSON output is displayed inline |
+| **Email Test** | Enter any recipient address and click the button to `POST /api/email-settings/test`; shows success or error feedback |
+
+> **Tip:** When `DEMO_MODE=true` the status banner turns yellow and email test calls return `{ ok: true, demo: true }` without hitting a real SMTP server.
+
 ## Demo / Simulated Email Send Mode
 
 For presentations or testing without a real SMTP account, you can enable **Demo Mode**.
