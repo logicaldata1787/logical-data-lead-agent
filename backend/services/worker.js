@@ -50,7 +50,7 @@ async function processEnrollments() {
         }
         const step = steps[stepIndex];
         // Get email account
-        const account = user.emailAccounts[0];
+        const account = user.emailAccounts?.[0];
         if (!account && !isDemoMode()) {
           console.warn(`No email account for user ${user.id}, skipping enrollment ${enrollment.id}`);
           continue;
@@ -99,7 +99,9 @@ async function processEnrollments() {
           await prisma.enrollment.update({ where: { id: enrollment.id }, data: { status: 'completed', currentStep: nextStep } });
         } else {
           const nextDelay = steps[nextStep].delayDays || 1;
-          const nextSendAt = new Date(); nextSendAt.setDate(nextSendAt.getDate() + nextDelay); nextSendAt.setHours(9, 0, 0, 0);
+          const nextSendAt = new Date();
+          nextSendAt.setDate(nextSendAt.getDate() + nextDelay);
+          nextSendAt.setHours(9, 0, 0, 0);
           await prisma.enrollment.update({ where: { id: enrollment.id }, data: { currentStep: nextStep, nextSendAt } });
         }
         await prisma.activityLog.create({ data: { contactId: contact.id, userId: user.id, type: 'email_sent', metadata: { subject, step: stepIndex + 1, sequenceId: sequence.id } } });

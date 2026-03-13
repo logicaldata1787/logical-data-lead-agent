@@ -27,7 +27,7 @@ router.post('/import', requireAuth, async (req, res) => {
       // Apollo often doesn't return emails directly — mark for enrichment
       if (!email) {
         await prisma.contact.create({ data: {
-          email: `apollo_${p.id || Date.now()}_pending@noemail.placeholder`,
+          email: `apollo_${p.id || Date.now()}_pending@pending.invalid`,
           firstName: p.first_name || '',
           lastName: p.last_name || '',
           title: p.title || '',
