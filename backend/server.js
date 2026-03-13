@@ -12,6 +12,7 @@ const campaignRoutes = require('./routes/campaigns');
 const unsubscribeRoutes = require('./routes/unsubscribe');
 const emailSettingsRoutes = require('./routes/emailSettings');
 const analyticsRoutes = require('./routes/analytics');
+const { isDemoMode } = require('./services/mailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,7 +24,7 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'UP' });
+  res.status(200).json({ status: 'UP', demoMode: isDemoMode() });
 });
 
 // Rate limiting
@@ -45,4 +46,7 @@ app.use('/api/analytics', analyticsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  if (isDemoMode()) {
+    console.log('DEMO_MODE: enabled — email sends are simulated, no SMTP credentials required');
+  }
 });
