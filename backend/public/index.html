@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logical Data Lead Agent — Demo UI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f7fa;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+    header {
+      background: #16213e;
+      color: #fff;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    #status-banner {
+      padding: .6rem 2rem;
+      font-size: .875rem;
+      font-weight: 500;
+      background: #e2e8f0;
+      color: #475569;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    #status-banner.up   { background: #dcfce7; color: #166534; }
+    #status-banner.demo { background: #fef9c3; color: #854d0e; }
+    main {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: .75rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.25rem 1.5rem;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #334155;
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+    button {
+      cursor: pointer;
+      padding: .45rem 1rem;
+      border: none;
+      border-radius: .5rem;
+      font-size: .875rem;
+      font-weight: 500;
+      background: #16213e;
+      color: #fff;
+      transition: background .15s;
+    }
+    button:hover { background: #0f3460; }
+    button:active { background: #533483; }
+    pre#output {
+      background: #0f172a;
+      color: #94a3b8;
+      border-radius: .5rem;
+      padding: 1rem;
+      font-size: .8125rem;
+      min-height: 80px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    label { display: block; font-size: .875rem; margin-bottom: .35rem; color: #475569; }
+    input[type="email"] {
+      width: 100%;
+      padding: .45rem .75rem;
+      border: 1px solid #cbd5e1;
+      border-radius: .5rem;
+      font-size: .875rem;
+      margin-bottom: .75rem;
+      outline: none;
+    }
+    input[type="email"]:focus { border-color: #6366f1; }
+    #email-result { font-size: .875rem; margin-top: .5rem; min-height: 1.2em; }
+    #email-result.ok  { color: #166534; }
+    #email-result.err { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚀 Logical Data Lead Agent</h1>
+  </header>
+
+  <div id="status-banner">Checking service health…</div>
+
+  <main>
+    <div class="card">
+      <h2>API Explorer</h2>
+      <div class="btn-row">
+        <button onclick="fetchApi('/api/leads')">GET /api/leads</button>
+        <button onclick="fetchApi('/api/campaigns')">GET /api/campaigns</button>
+        <button onclick="fetchApi('/api/analytics')">GET /api/analytics</button>
+      </div>
+      <pre id="output">Results will appear here…</pre>
+    </div>
+
+    <div class="card">
+      <h2>📧 Email Test</h2>
+      <label for="email-to">Recipient address</label>
+      <input type="email" id="email-to" placeholder="you@example.com" />
+      <button onclick="sendTestEmail()">POST /api/email-settings/test</button>
+      <div id="email-result"></div>
+    </div>
+  </main>
+
+  <script>
+    // ── Health check ────────────────────────────────────────────────────────────
+    async function checkHealth() {
+      const banner = document.getElementById('status-banner');
+      try {
+        const res = await fetch('/health');
+        const data = await res.json();
+        if (data.status === 'UP') {
+          if (data.demoMode) {
+            banner.textContent = '✅ Service is UP   |   ⚠️  DEMO MODE — emails are simulated';
+            banner.className = 'demo';
+          } else {
+            banner.textContent = '✅ Service is UP';
+            banner.className = 'up';
+          }
+        } else {
+          banner.textContent = `⚠️  Unexpected status: ${JSON.stringify(data)}`;
+        }
+      } catch (e) {
+        banner.textContent = '❌ Could not reach /health — ' + e.message;
+      }
+    }
+
+    // ── Generic GET ─────────────────────────────────────────────────────────────
+    async function fetchApi(endpoint) {
+      const out = document.getElementById('output');
+      out.textContent = `GET ${endpoint} …`;
+      try {
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        out.textContent = `Error: ${e.message}`;
+      }
+    }
+
+    // ── Email test ──────────────────────────────────────────────────────────────
+    async function sendTestEmail() {
+      const to = document.getElementById('email-to').value.trim();
+      const result = document.getElementById('email-result');
+      result.textContent = '';
+      result.className = '';
+      if (!to) {
+        result.textContent = 'Please enter a recipient address.';
+        result.className = 'err';
+        return;
+      }
+      try {
+        const res = await fetch('/api/email-settings/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          result.textContent = data.demo
+            ? `✅ Demo: simulated send to ${data.sentTo}`
+            : `✅ Email sent to ${data.sentTo}`;
+          result.className = 'ok';
+        } else {
+          result.textContent = `❌ ${data.error}`;
+          result.className = 'err';
+        }
+      } catch (e) {
+        result.textContent = `❌ ${e.message}`;
+        result.className = 'err';
+      }
+    }
+
+    checkHealth();
+  </script>
+</body>
+</html>
