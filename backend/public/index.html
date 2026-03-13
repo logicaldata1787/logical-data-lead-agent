@@ -3,194 +3,1583 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Logical Data Lead Agent — Demo UI</title>
+  <title>Logical Data Solution</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f5f7fa;
-      color: #1a1a2e;
-      min-height: 100vh;
+    :root {
+      --sidebar: #16213e;
+      --sidebar-hover: #0f3460;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --success: #166534;
+      --success-bg: #dcfce7;
+      --error: #b91c1c;
+      --error-bg: #fee2e2;
+      --warn-bg: #fef9c3;
+      --warn: #854d0e;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --surface: #f8fafc;
+      --card: #ffffff;
+      --radius: .625rem;
     }
-    header {
-      background: #16213e;
-      color: #fff;
-      padding: 1.25rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+    html, body { height: 100%; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--surface); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; font-size: 14px; }
+
+    /* ── DEMO BANNER ── */
+    #demo-banner { display: none; background: var(--warn-bg); color: var(--warn); padding: .5rem 1.5rem; font-size: .8125rem; font-weight: 500; text-align: center; border-bottom: 1px solid #fde68a; }
+    #demo-banner.visible { display: block; }
+
+    /* ── LAYOUT ── */
+    #app { display: flex; flex: 1; overflow: hidden; height: 100vh; }
+    #sidebar { width: 240px; min-width: 240px; background: var(--sidebar); color: #e2e8f0; display: flex; flex-direction: column; overflow-y: auto; transition: width .2s; }
+    #sidebar.collapsed { width: 0; min-width: 0; overflow: hidden; }
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: .75rem 1.5rem; display: flex; align-items: center; gap: 1rem; min-height: 56px; }
+    #page-title { font-size: 1rem; font-weight: 600; flex: 1; }
+    #content { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+    /* ── SIDEBAR HEADER ── */
+    .sidebar-logo { padding: 1.25rem 1.25rem .75rem; display: flex; align-items: center; gap: .6rem; font-size: 1rem; font-weight: 700; color: #fff; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .sidebar-logo span { font-size: 1.25rem; }
+    .sidebar-section { padding: .5rem 0; }
+    .sidebar-label { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; padding: .75rem 1.25rem .25rem; }
+    .nav-item { display: flex; align-items: center; gap: .625rem; padding: .5rem 1.25rem; cursor: pointer; border-radius: 0; color: #cbd5e1; font-size: .875rem; font-weight: 500; transition: background .15s, color .15s; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+    .nav-item.active { background: var(--accent); color: #fff; }
+    .nav-icon { width: 18px; text-align: center; flex-shrink: 0; }
+
+    /* ── USER BADGE ── */
+    .sidebar-user { margin-top: auto; padding: .75rem 1.25rem; border-top: 1px solid rgba(255,255,255,.07); display: flex; align-items: center; gap: .625rem; font-size: .8125rem; color: #94a3b8; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: .75rem; flex-shrink: 0; }
+    .user-info { flex: 1; overflow: hidden; }
+    .user-name { color: #e2e8f0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: .6875rem; }
+    .logout-btn { background: none; border: none; color: #94a3b8; cursor: pointer; padding: .25rem; font-size: 1rem; }
+    .logout-btn:hover { color: #f87171; }
+
+    /* ── BUTTONS ── */
+    .btn { display: inline-flex; align-items: center; gap: .375rem; padding: .45rem 1rem; border: none; border-radius: var(--radius); font-size: .875rem; font-weight: 500; cursor: pointer; transition: background .15s, opacity .15s; white-space: nowrap; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-secondary:hover:not(:disabled) { background: #cbd5e1; }
+    .btn-danger { background: #fee2e2; color: var(--error); }
+    .btn-danger:hover:not(:disabled) { background: #fecaca; }
+    .btn-success { background: var(--success-bg); color: var(--success); }
+    .btn-sm { padding: .3rem .65rem; font-size: .8125rem; }
+    .btn-icon { padding: .3rem .5rem; }
+
+    /* ── CARDS ── */
+    .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; }
+    .card-title { font-size: .875rem; font-weight: 600; color: var(--muted); margin-bottom: .5rem; }
+
+    /* ── STAT CARDS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.125rem 1.25rem; }
+    .stat-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: .375rem; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--text); }
+    .stat-icon { font-size: 1.25rem; margin-bottom: .5rem; }
+
+    /* ── TABLES ── */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: var(--surface); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: .625rem 1rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: .625rem 1rem; border-bottom: 1px solid var(--border); font-size: .875rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface); }
+
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; padding: .2rem .55rem; border-radius: 999px; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    .badge-prospect { background: #e0e7ff; color: #4338ca; }
+    .badge-contacted { background: #dbeafe; color: #1d4ed8; }
+    .badge-replied { background: #fef3c7; color: #b45309; }
+    .badge-qualified { background: #d1fae5; color: #047857; }
+    .badge-closed { background: #dcfce7; color: var(--success); }
+    .badge-lost { background: #fee2e2; color: var(--error); }
+    .badge-active { background: #d1fae5; color: #047857; }
+    .badge-paused { background: #fef3c7; color: #b45309; }
+    .badge-completed { background: #dbeafe; color: #1d4ed8; }
+    .badge-default { background: var(--border); color: var(--muted); }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: .8125rem; font-weight: 500; color: var(--muted); margin-bottom: .375rem; }
+    input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+      width: 100%; padding: .525rem .75rem; border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: .875rem; font-family: inherit; background: var(--card); color: var(--text); outline: none; transition: border-color .15s;
     }
-    header h1 { font-size: 1.25rem; font-weight: 600; }
-    #status-banner {
-      padding: .6rem 2rem;
-      font-size: .875rem;
-      font-weight: 500;
-      background: #e2e8f0;
-      color: #475569;
-      display: flex;
-      gap: 1rem;
-      align-items: center;
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+    textarea { resize: vertical; min-height: 100px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+    /* ── ALERTS ── */
+    .alert { padding: .625rem 1rem; border-radius: var(--radius); font-size: .875rem; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+    .alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #bbf7d0; }
+    .alert-error { background: var(--error-bg); color: var(--error); border: 1px solid #fecaca; }
+    .alert-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .alert-warn { background: var(--warn-bg); color: var(--warn); border: 1px solid #fde68a; }
+
+    /* ── MODAL ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+    .modal { background: var(--card); border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,.3); width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 1rem; font-weight: 600; }
+    .modal-close { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--muted); line-height: 1; padding: .25rem; }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: .75rem; }
+
+    /* ── SECTION HEADER ── */
+    .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .section-header h2 { font-size: 1rem; font-weight: 600; flex: 1; }
+    .toolbar { display: flex; gap: .625rem; flex-wrap: wrap; align-items: center; }
+
+    /* ── SEARCH/FILTER ── */
+    .search-input { padding: .45rem .75rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: .875rem; outline: none; width: 220px; }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-select { padding: .45rem .75rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: .875rem; outline: none; background: var(--card); cursor: pointer; }
+    .filter-select:focus { border-color: var(--accent); }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; align-items: center; gap: .375rem; padding: .75rem 1rem; justify-content: flex-end; border-top: 1px solid var(--border); }
+    .page-btn { padding: .35rem .65rem; border: 1px solid var(--border); border-radius: .375rem; background: var(--card); cursor: pointer; font-size: .8125rem; transition: background .15s; }
+    .page-btn:hover { background: var(--surface); }
+    .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .page-btn:disabled { opacity: .4; cursor: default; }
+    .page-info { font-size: .8125rem; color: var(--muted); padding: 0 .5rem; }
+
+    /* ── PIPELINE / KANBAN ── */
+    .kanban { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
+    .kanban-col { min-width: 200px; max-width: 220px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); flex-shrink: 0; }
+    .kanban-col-header { padding: .75rem 1rem; border-bottom: 1px solid var(--border); font-size: .8125rem; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+    .kanban-col-count { background: var(--border); color: var(--muted); border-radius: 999px; padding: .1rem .45rem; font-size: .7rem; }
+    .kanban-cards { padding: .625rem; display: flex; flex-direction: column; gap: .5rem; min-height: 80px; }
+    .kanban-card { background: var(--card); border: 1px solid var(--border); border-radius: .5rem; padding: .625rem .875rem; cursor: pointer; transition: box-shadow .15s; font-size: .8125rem; }
+    .kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); border-color: var(--accent); }
+    .kanban-card-name { font-weight: 600; margin-bottom: .2rem; }
+    .kanban-card-sub { color: var(--muted); font-size: .75rem; }
+
+    /* ── SEQUENCE STEPS ── */
+    .steps-list { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1rem; }
+    .step-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+    .step-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+    .step-title { font-weight: 600; flex: 1; }
+    .step-delay { font-size: .8125rem; color: var(--muted); }
+
+    /* ── EMAIL ACCOUNT CARDS ── */
+    .account-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .account-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; display: flex; align-items: flex-start; gap: 1rem; }
+    .account-icon { font-size: 1.75rem; flex-shrink: 0; }
+    .account-info { flex: 1; }
+    .account-email { font-weight: 600; }
+    .account-type { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+
+    /* ── LOGIN PAGE ── */
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--surface); padding: 1rem; }
+    .login-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 2.5rem 2rem; width: 100%; max-width: 400px; box-shadow: 0 4px 24px rgba(0,0,0,.07); }
+    .login-logo { text-align: center; margin-bottom: 1.75rem; }
+    .login-logo .logo-icon { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+    .login-logo h1 { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+    .login-logo p { font-size: .8125rem; color: var(--muted); margin-top: .25rem; }
+
+    /* ── LOADING ── */
+    .loading { display: flex; align-items: center; justify-content: center; padding: 3rem; flex-direction: column; gap: .75rem; color: var(--muted); }
+    .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .empty-text { font-size: .9375rem; font-weight: 500; margin-bottom: .375rem; }
+    .empty-sub { font-size: .8125rem; }
+
+    /* ── TOAST ── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: .5rem; }
+    .toast { padding: .75rem 1.25rem; border-radius: var(--radius); font-size: .875rem; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,.15); animation: slide-in .25s ease; max-width: 360px; }
+    .toast-success { background: #166534; color: #fff; }
+    .toast-error { background: #b91c1c; color: #fff; }
+    .toast-info { background: var(--accent); color: #fff; }
+    @keyframes slide-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ── CHART PLACEHOLDER ── */
+    .chart-container { background: var(--surface); border-radius: var(--radius); padding: 2rem; text-align: center; color: var(--muted); font-size: .875rem; }
+    .bar-chart { display: flex; align-items: flex-end; gap: .5rem; height: 120px; padding: 0 .5rem; }
+    .bar { background: var(--accent); border-radius: .25rem .25rem 0 0; flex: 1; opacity: .85; transition: opacity .15s; min-width: 20px; }
+    .bar:hover { opacity: 1; }
+    .bar-labels { display: flex; gap: .5rem; justify-content: space-around; margin-top: .5rem; padding: 0 .5rem; }
+    .bar-label { flex: 1; text-align: center; font-size: .7rem; color: var(--muted); }
+
+    /* ── PERSONALIZATION HINT ── */
+    .hint-tags { display: flex; flex-wrap: wrap; gap: .375rem; margin-top: .375rem; }
+    .hint-tag { background: #e0e7ff; color: #4338ca; padding: .2rem .5rem; border-radius: .375rem; font-size: .75rem; font-family: monospace; cursor: pointer; }
+    .hint-tag:hover { background: #c7d2fe; }
+
+    /* ── MISC ── */
+    .inline-form { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+    .text-muted { color: var(--muted); }
+    .text-sm { font-size: .8125rem; }
+    .fw-500 { font-weight: 500; }
+    .mb-1 { margin-bottom: .5rem; }
+    .mt-1 { margin-top: .5rem; }
+    .mt-2 { margin-top: 1rem; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-1 { gap: .5rem; }
+    .gap-2 { gap: 1rem; }
+    .justify-between { justify-content: space-between; }
+    .w-full { width: 100%; }
+    input[type="file"] { padding: .4rem; }
+    .step-body-preview { font-size: .8125rem; color: var(--muted); white-space: pre-wrap; max-height: 60px; overflow: hidden; margin-top: .25rem; }
+    .contact-modal-detail p { margin-bottom: .5rem; font-size: .875rem; }
+    .contact-modal-detail strong { color: var(--text); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 768px) {
+      #sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 200; transform: translateX(-100%); transition: transform .25s; }
+      #sidebar.open { transform: translateX(0); }
+      .form-row, .form-row-3, .two-col { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    #status-banner.up   { background: #dcfce7; color: #166534; }
-    #status-banner.demo { background: #fef9c3; color: #854d0e; }
-    main {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 0 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .card {
-      background: #fff;
-      border-radius: .75rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      padding: 1.25rem 1.5rem;
-    }
-    .card h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: #334155;
-    }
-    .btn-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
-    button {
-      cursor: pointer;
-      padding: .45rem 1rem;
-      border: none;
-      border-radius: .5rem;
-      font-size: .875rem;
-      font-weight: 500;
-      background: #16213e;
-      color: #fff;
-      transition: background .15s;
-    }
-    button:hover { background: #0f3460; }
-    button:active { background: #533483; }
-    pre#output {
-      background: #0f172a;
-      color: #94a3b8;
-      border-radius: .5rem;
-      padding: 1rem;
-      font-size: .8125rem;
-      min-height: 80px;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    label { display: block; font-size: .875rem; margin-bottom: .35rem; color: #475569; }
-    input[type="email"] {
-      width: 100%;
-      padding: .45rem .75rem;
-      border: 1px solid #cbd5e1;
-      border-radius: .5rem;
-      font-size: .875rem;
-      margin-bottom: .75rem;
-      outline: none;
-    }
-    input[type="email"]:focus { border-color: #6366f1; }
-    #email-result { font-size: .875rem; margin-top: .5rem; min-height: 1.2em; }
-    #email-result.ok  { color: #166534; }
-    #email-result.err { color: #b91c1c; }
+    .collapse-btn { background: none; border: none; color: #94a3b8; cursor: pointer; padding: .35rem; font-size: .9rem; margin-left: auto; }
+    .collapse-btn:hover { color: #fff; }
+    select option { background: var(--card); color: var(--text); }
+    .inline-edit select { padding: .3rem .5rem; font-size: .8125rem; border: 1px solid var(--border); border-radius: .375rem; }
+    .apollo-result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .75rem; margin-top: 1rem; }
+    .apollo-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+    .apollo-card-name { font-weight: 600; margin-bottom: .25rem; }
+    .apollo-card-meta { font-size: .8125rem; color: var(--muted); }
+    .checkbox-list { display: flex; flex-direction: column; gap: .5rem; max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: .625rem; }
+    .checkbox-item { display: flex; align-items: center; gap: .5rem; font-size: .875rem; }
+    .checkbox-item input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
+    .progress-bar-wrap { background: var(--border); border-radius: 999px; height: 6px; overflow: hidden; }
+    .progress-bar { background: var(--accent); height: 100%; border-radius: 999px; transition: width .3s; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🚀 Logical Data Lead Agent</h1>
-  </header>
 
-  <div id="status-banner">Checking service health…</div>
+<div id="demo-banner">⚠️ DEMO MODE — emails are simulated and not actually sent</div>
+<div id="toast-container"></div>
 
-  <main>
-    <div class="card">
-      <h2>API Explorer</h2>
-      <div class="btn-row">
-        <button onclick="fetchApi('/api/leads')">GET /api/leads</button>
-        <button onclick="fetchApi('/api/campaigns')">GET /api/campaigns</button>
-        <button onclick="fetchApi('/api/analytics')">GET /api/analytics</button>
+<div id="root"></div>
+
+<script>
+'use strict';
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+const state = {
+  token: localStorage.getItem('token') || null,
+  user: JSON.parse(localStorage.getItem('user') || 'null'),
+  page: null,
+  contactsPage: 1,
+  contactsSearch: '',
+  contactsStage: '',
+  pageData: {},
+};
+
+// ─── API HELPER ─────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  if (opts.body instanceof FormData) delete headers['Content-Type'];
+  const res = await fetch('/api' + path, { ...opts, headers });
+  const ct = res.headers.get('content-type') || '';
+  const data = ct.includes('json') ? await res.json() : await res.text();
+  if (!res.ok) throw { status: res.status, data };
+  return data;
+}
+
+// ─── TOAST ──────────────────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ─── ROUTER ─────────────────────────────────────────────────────────────────
+const routes = {
+  '#/login': 'login',
+  '#/dashboard': 'dashboard',
+  '#/contacts': 'contacts',
+  '#/events': 'events',
+  '#/sequences': 'sequences',
+  '#/enrollments': 'enrollments',
+  '#/inbox': 'inbox',
+  '#/pipeline': 'pipeline',
+  '#/email-accounts': 'emailAccounts',
+  '#/users': 'users',
+  '#/apollo': 'apollo',
+};
+
+function getPage() {
+  const hash = location.hash;
+  // Redirect bare '#/' to dashboard
+  if (!hash || hash === '#' || hash === '#/') return 'redirect-dashboard';
+  return routes[hash] || 'dashboard';
+}
+
+function navigate(hash) {
+  location.hash = hash;
+}
+
+window.addEventListener('hashchange', () => render());
+
+async function render() {
+  const page = getPage();
+
+  // Redirect bare '#/' to appropriate page
+  if (page === 'redirect-dashboard') {
+    navigate(state.token ? '#/dashboard' : '#/login');
+    return;
+  }
+
+  state.page = page;
+
+  if (page !== 'login' && !state.token) {
+    navigate('#/login');
+    return;
+  }
+  if (page === 'login' && state.token) {
+    navigate('#/dashboard');
+    return;
+  }
+
+  if (page === 'login') {
+    renderLoginPage();
+    return;
+  }
+
+  renderShell();
+  updateNav();
+
+  const pageTitles = {
+    dashboard: 'Dashboard', contacts: 'Contacts', events: 'Events',
+    sequences: 'Sequences', enrollments: 'Enrollments', inbox: 'Inbox',
+    pipeline: 'Pipeline', emailAccounts: 'Email Accounts', users: 'Users', apollo: 'Apollo'
+  };
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = pageTitles[page] || '';
+
+  const content = document.getElementById('content');
+  if (content) content.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading…</span></div>';
+
+  const fns = {
+    dashboard: renderDashboard,
+    contacts: renderContacts,
+    events: renderEvents,
+    sequences: renderSequences,
+    enrollments: renderEnrollments,
+    inbox: renderInbox,
+    pipeline: renderPipeline,
+    emailAccounts: renderEmailAccounts,
+    users: renderUsers,
+    apollo: renderApollo,
+  };
+  if (fns[page]) await fns[page]();
+}
+
+// ─── SHELL ───────────────────────────────────────────────────────────────────
+function renderShell() {
+  const root = document.getElementById('root');
+  if (document.getElementById('app')) return;
+  root.innerHTML = `
+    <div id="app">
+      <nav id="sidebar">
+        <div class="sidebar-logo"><span>🚀</span> Logical Data Solution</div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Main</div>
+          <a class="nav-item" data-route="#/dashboard" href="#/dashboard"><span class="nav-icon">📊</span>Dashboard</a>
+          <a class="nav-item" data-route="#/contacts" href="#/contacts"><span class="nav-icon">👥</span>Contacts</a>
+          <a class="nav-item" data-route="#/events" href="#/events"><span class="nav-icon">📅</span>Events</a>
+          <a class="nav-item" data-route="#/pipeline" href="#/pipeline"><span class="nav-icon">🏗️</span>Pipeline</a>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Outreach</div>
+          <a class="nav-item" data-route="#/sequences" href="#/sequences"><span class="nav-icon">✉️</span>Sequences</a>
+          <a class="nav-item" data-route="#/enrollments" href="#/enrollments"><span class="nav-icon">🔄</span>Enrollments</a>
+          <a class="nav-item" data-route="#/inbox" href="#/inbox"><span class="nav-icon">📥</span>Inbox</a>
+          <a class="nav-item" data-route="#/email-accounts" href="#/email-accounts"><span class="nav-icon">⚙️</span>Email Accounts</a>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Tools</div>
+          <a class="nav-item" data-route="#/apollo" href="#/apollo"><span class="nav-icon">🔍</span>Apollo</a>
+          <a class="nav-item" data-route="#/users" href="#/users"><span class="nav-icon">🧑‍💼</span>Users</a>
+        </div>
+        <div class="sidebar-user">
+          <div class="user-avatar">${(state.user?.name || 'U')[0].toUpperCase()}</div>
+          <div class="user-info">
+            <div class="user-name">${esc(state.user?.name || 'User')}</div>
+            <div class="user-role">${esc(state.user?.role || '')}</div>
+          </div>
+          <button class="logout-btn" onclick="logout()" title="Log out">⏻</button>
+        </div>
+      </nav>
+      <div id="main">
+        <div id="topbar">
+          <button onclick="toggleSidebar()" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--muted);">☰</button>
+          <div id="page-title"></div>
+        </div>
+        <div id="content"></div>
       </div>
-      <pre id="output">Results will appear here…</pre>
-    </div>
+    </div>`;
+}
 
-    <div class="card">
-      <h2>📧 Email Test</h2>
-      <label for="email-to">Recipient address</label>
-      <input type="email" id="email-to" placeholder="you@example.com" />
-      <button onclick="sendTestEmail()">POST /api/email-settings/test</button>
-      <div id="email-result"></div>
-    </div>
-  </main>
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 768) sb.classList.toggle('open');
+  else sb.classList.toggle('collapsed');
+}
 
-  <script>
-    // ── Health check ────────────────────────────────────────────────────────────
-    async function checkHealth() {
-      const banner = document.getElementById('status-banner');
-      try {
-        const res = await fetch('/health');
-        const data = await res.json();
-        if (data.status === 'UP') {
-          if (data.demoMode) {
-            banner.textContent = '✅ Service is UP   |   ⚠️  DEMO MODE — emails are simulated';
-            banner.className = 'demo';
-          } else {
-            banner.textContent = '✅ Service is UP';
-            banner.className = 'up';
-          }
-        } else {
-          banner.textContent = `⚠️  Unexpected status: ${JSON.stringify(data)}`;
-        }
-      } catch (e) {
-        banner.textContent = '❌ Could not reach /health — ' + e.message;
-      }
+function updateNav() {
+  const hash = location.hash || '#/dashboard';
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.route === hash);
+  });
+}
+
+function logout() {
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  document.getElementById('root').innerHTML = '';
+  document.getElementById('app')?.remove();
+  navigate('#/login');
+  render();
+}
+
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function stageBadge(stage) {
+  const s = (stage || 'prospect').toLowerCase();
+  return `<span class="badge badge-${s}">${esc(stage || 'Prospect')}</span>`;
+}
+
+// ─── LOGIN PAGE ──────────────────────────────────────────────────────────────
+function renderLoginPage() {
+  document.getElementById('root').innerHTML = `
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo">
+          <span class="logo-icon">🚀</span>
+          <h1>Logical Data Solution</h1>
+          <p>Sign in to your account</p>
+        </div>
+        <div id="login-alert"></div>
+        <form id="login-form">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="login-email" placeholder="admin@example.com" required autocomplete="username" />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="btn btn-primary w-full" id="login-btn" style="width:100%;justify-content:center;">Sign In</button>
+        </form>
+      </div>
+    </div>`;
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const alertEl = document.getElementById('login-alert');
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    alertEl.innerHTML = '';
+    try {
+      const data = await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value })
+      });
+      state.token = data.token;
+      state.user = data.user;
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      navigate('#/dashboard');
+    } catch (err) {
+      const msg = err?.data?.error || err?.data?.message || 'Login failed';
+      alertEl.innerHTML = `<div class="alert alert-error">⚠️ ${esc(msg)}</div>`;
+      btn.disabled = false; btn.textContent = 'Sign In';
     }
+  });
+}
 
-    // ── Generic GET ─────────────────────────────────────────────────────────────
-    async function fetchApi(endpoint) {
-      const out = document.getElementById('output');
-      out.textContent = `GET ${endpoint} …`;
-      try {
-        const res = await fetch(endpoint);
-        const data = await res.json();
-        out.textContent = JSON.stringify(data, null, 2);
-      } catch (e) {
-        out.textContent = `Error: ${e.message}`;
-      }
-    }
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+async function renderDashboard() {
+  const content = document.getElementById('content');
+  try {
+    const [analytics, contacts, enrollments] = await Promise.all([
+      api('/analytics').catch(() => ({})),
+      api('/contacts?limit=5').catch(() => ({ contacts: [], total: 0 })),
+      api('/enrollments?limit=5').catch(() => ({ enrollments: [] })),
+    ]);
+    const stats = analytics.summary || {};
+    const totalContacts = contacts.total || 0;
+    const totalEnrollments = (enrollments.enrollments || []).length;
 
-    // ── Email test ──────────────────────────────────────────────────────────────
-    async function sendTestEmail() {
-      const to = document.getElementById('email-to').value.trim();
-      const result = document.getElementById('email-result');
-      result.textContent = '';
-      result.className = '';
-      if (!to) {
-        result.textContent = 'Please enter a recipient address.';
-        result.className = 'err';
-        return;
-      }
+    const stageData = analytics.stageBreakdown || [];
+    const maxVal = stageData.reduce((m, s) => Math.max(m, s.count || 0), 1);
+
+    content.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Contacts</div><div class="stat-value">${totalContacts}</div></div>
+        <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-label">Enrollments</div><div class="stat-value">${stats.totalEnrollments || 0}</div></div>
+        <div class="stat-card"><div class="stat-icon">✉️</div><div class="stat-label">Emails Sent</div><div class="stat-value">${stats.emailsSent || 0}</div></div>
+        <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-label">Replied</div><div class="stat-value">${stats.replied || 0}</div></div>
+        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-label">Sequences</div><div class="stat-value">${stats.sequences || 0}</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Pipeline by Stage</div>
+          ${stageData.length ? `
+            <div class="bar-chart">
+              ${stageData.map(s => `<div class="bar" style="height:${Math.round((s.count/maxVal)*100)}%" title="${esc(s.stage)}: ${s.count}"></div>`).join('')}
+            </div>
+            <div class="bar-labels">
+              ${stageData.map(s => `<div class="bar-label">${esc(s.stage)}</div>`).join('')}
+            </div>` : '<div class="chart-container">No stage data yet</div>'}
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:.875rem;">Recent Contacts</div>
+          ${(contacts.contacts || []).length === 0 ? '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No contacts yet</div></div>' :
+          `<table><thead><tr><th>Name</th><th>Stage</th></tr></thead><tbody>
+            ${(contacts.contacts || []).map(c => `<tr><td>${esc(c.firstName)} ${esc(c.lastName)}</td><td>${stageBadge(c.stage)}</td></tr>`).join('')}
+          </tbody></table>`}
+          <div class="mt-2"><a href="#/contacts" class="btn btn-secondary btn-sm">View all contacts →</a></div>
+        </div>
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load dashboard data.</div>`;
+  }
+}
+
+// ─── CONTACTS ────────────────────────────────────────────────────────────────
+async function renderContacts() {
+  const content = document.getElementById('content');
+  const page = state.contactsPage || 1;
+  const search = state.contactsSearch || '';
+  const stage = state.contactsStage || '';
+  const limit = 20;
+  const offset = (page - 1) * limit;
+
+  try {
+    let qs = `?limit=${limit}&offset=${offset}`;
+    if (search) qs += '&search=' + encodeURIComponent(search);
+    if (stage) qs += '&stage=' + encodeURIComponent(stage);
+    const data = await api('/contacts' + qs);
+    const contacts = data.contacts || [];
+    const total = data.total || 0;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    const stages = ['Prospect','Contacted','Replied','Qualified','Closed','Lost'];
+
+    content.innerHTML = `
+      <div class="section-header">
+        <h2>Contacts <span class="text-muted text-sm">(${total})</span></h2>
+        <div class="toolbar">
+          <input class="search-input" id="contacts-search" placeholder="Search…" value="${esc(search)}" />
+          <select class="filter-select" id="contacts-stage-filter">
+            <option value="">All Stages</option>
+            ${stages.map(s => `<option value="${s}" ${stage===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 Import CSV<input type="file" id="csv-import" accept=".csv" style="display:none"/></label>
+          <button class="btn btn-primary btn-sm" onclick="openAddContactModal()">＋ Add Contact</button>
+        </div>
+      </div>
+      <div id="import-status"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Stage</th><th>Actions</th></tr></thead>
+          <tbody id="contacts-tbody">
+            ${contacts.length === 0 ? `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No contacts found</div></div></td></tr>` :
+              contacts.map(c => `
+                <tr>
+                  <td><strong>${esc(c.firstName)} ${esc(c.lastName)}</strong></td>
+                  <td>${esc(c.email)}</td>
+                  <td>${esc(c.company || '—')}</td>
+                  <td>
+                    <div class="inline-edit">
+                      <select data-id="${c.id}" class="stage-select" onchange="updateStage(this)">
+                        ${stages.map(s => `<option value="${s}" ${c.stage===s?'selected':''}>${s}</option>`).join('')}
+                      </select>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display:flex;gap:.375rem;">
+                      <button class="btn btn-secondary btn-sm" onclick="openEnrollContactModal('${c.id}','${esc(c.firstName)} ${esc(c.lastName)}')">Enroll</button>
+                      <button class="btn btn-danger btn-sm" onclick="deleteContact('${c.id}')">✕</button>
+                    </div>
+                  </td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span class="page-info">Page ${page} of ${totalPages} · ${total} total</span>
+          <button class="page-btn" ${page<=1?'disabled':''} onclick="contactsNav(${page-1})">‹</button>
+          ${Array.from({length: Math.min(totalPages,5)}, (_,i) => {
+            const p = Math.max(1, page-2) + i;
+            if (p > totalPages) return '';
+            return `<button class="page-btn ${p===page?'active':''}" onclick="contactsNav(${p})">${p}</button>`;
+          }).join('')}
+          <button class="page-btn" ${page>=totalPages?'disabled':''} onclick="contactsNav(${page+1})">›</button>
+        </div>
+      </div>`;
+
+    document.getElementById('contacts-search').addEventListener('input', debounce(e => {
+      state.contactsSearch = e.target.value;
+      state.contactsPage = 1;
+      renderContacts();
+    }, 350));
+
+    document.getElementById('contacts-stage-filter').addEventListener('change', e => {
+      state.contactsStage = e.target.value;
+      state.contactsPage = 1;
+      renderContacts();
+    });
+
+    document.getElementById('csv-import').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const statusEl = document.getElementById('import-status');
+      statusEl.innerHTML = '<div class="alert alert-info">⏳ Importing…</div>';
+      const fd = new FormData();
+      fd.append('file', file);
       try {
-        const res = await fetch('/api/email-settings/test', {
+        const res = await fetch('/api/contacts/import', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to }),
+          headers: { 'Authorization': 'Bearer ' + state.token },
+          body: fd,
         });
         const data = await res.json();
-        if (data.ok) {
-          result.textContent = data.demo
-            ? `✅ Demo: simulated send to ${data.sentTo}`
-            : `✅ Email sent to ${data.sentTo}`;
-          result.className = 'ok';
-        } else {
-          result.textContent = `❌ ${data.error}`;
-          result.className = 'err';
-        }
-      } catch (e) {
-        result.textContent = `❌ ${e.message}`;
-        result.className = 'err';
+        if (!res.ok) throw data;
+        statusEl.innerHTML = `<div class="alert alert-success">✅ Imported ${data.imported || 0} contacts</div>`;
+        setTimeout(() => { state.contactsPage = 1; renderContacts(); }, 1200);
+      } catch (err) {
+        statusEl.innerHTML = `<div class="alert alert-error">❌ Import failed: ${esc(err?.error || err?.message || 'Unknown error')}</div>`;
+      }
+    });
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load contacts.</div>`;
+  }
+}
+
+window.contactsNav = function(p) { state.contactsPage = p; renderContacts(); };
+
+window.updateStage = async function(sel) {
+  const id = sel.dataset.id;
+  const stage = sel.value;
+  try {
+    await api('/contacts/' + id + '/stage', { method: 'PATCH', body: JSON.stringify({ stage }) });
+    toast('Stage updated', 'success');
+  } catch (err) {
+    toast('Failed to update stage', 'error');
+  }
+};
+
+window.deleteContact = async function(id) {
+  if (!confirm('Delete this contact?')) return;
+  try {
+    await api('/contacts/' + id, { method: 'DELETE' });
+    toast('Contact deleted', 'success');
+    renderContacts();
+  } catch (err) {
+    toast('Failed to delete', 'error');
+  }
+};
+
+window.openAddContactModal = function() {
+  showModal('Add Contact', `
+    <form id="add-contact-form">
+      <div class="form-row">
+        <div class="form-group"><label>First Name *</label><input type="text" name="firstName" required /></div>
+        <div class="form-group"><label>Last Name</label><input type="text" name="lastName" /></div>
+      </div>
+      <div class="form-group"><label>Email *</label><input type="email" name="email" required /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Company</label><input type="text" name="company" /></div>
+        <div class="form-group"><label>Title</label><input type="text" name="title" /></div>
+      </div>
+      <div class="form-group">
+        <label>Stage</label>
+        <select name="stage">
+          <option>Prospect</option><option>Contacted</option><option>Replied</option>
+          <option>Qualified</option><option>Closed</option><option>Lost</option>
+        </select>
+      </div>
+      <div id="contact-form-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('add-contact-form');
+      const fd = new FormData(form);
+      const body = Object.fromEntries(fd.entries());
+      try {
+        await api('/contacts', { method: 'POST', body: JSON.stringify(body) });
+        toast('Contact added', 'success');
+        closeModal();
+        renderContacts();
+      } catch (err) {
+        document.getElementById('contact-form-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to add contact')}</div>`;
+        return false;
       }
     }
+  );
+};
 
-    checkHealth();
-  </script>
+window.openEnrollContactModal = async function(contactId, contactName) {
+  let seqs = [];
+  try { seqs = (await api('/sequences')).sequences || []; } catch(e) {}
+  showModal(`Enroll ${contactName}`, `
+    <form id="enroll-contact-form">
+      <div class="form-group">
+        <label>Select Sequence *</label>
+        <select name="sequenceId" required>
+          <option value="">-- choose --</option>
+          ${seqs.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div id="enroll-contact-error"></div>
+    </form>`,
+    async () => {
+      const sequenceId = document.querySelector('#enroll-contact-form [name=sequenceId]').value;
+      if (!sequenceId) { document.getElementById('enroll-contact-error').innerHTML='<div class="alert alert-error">Select a sequence</div>'; return false; }
+      try {
+        await api('/enrollments', { method: 'POST', body: JSON.stringify({ contactIds: [contactId], sequenceId }) });
+        toast('Enrolled successfully', 'success');
+        closeModal();
+      } catch (err) {
+        document.getElementById('enroll-contact-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Enrollment failed')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+// ─── EVENTS ──────────────────────────────────────────────────────────────────
+async function renderEvents() {
+  const content = document.getElementById('content');
+  try {
+    const data = await api('/events');
+    const events = data.events || data || [];
+    content.innerHTML = `
+      <div class="section-header">
+        <h2>Events</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddEventModal()">＋ Add Event</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Date</th><th>Location</th><th>Contacts</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${events.length === 0 ? `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No events yet</div></div></td></tr>` :
+              events.map(ev => `
+                <tr>
+                  <td><strong>${esc(ev.name)}</strong></td>
+                  <td>${ev.date ? new Date(ev.date).toLocaleDateString() : '—'}</td>
+                  <td>${esc(ev.location || '—')}</td>
+                  <td>${ev._count?.contacts ?? ev.contactCount ?? '—'}</td>
+                  <td>
+                    <button class="btn btn-secondary btn-sm" onclick="openEditEventModal('${ev.id}','${esc(ev.name)}','${ev.date?ev.date.split('T')[0]:''}','${esc(ev.location||'')}')">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteEvent('${ev.id}')">✕</button>
+                  </td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load events.</div>`;
+  }
+}
+
+window.openAddEventModal = function() {
+  showModal('Add Event', `
+    <form id="add-event-form">
+      <div class="form-group"><label>Event Name *</label><input type="text" name="name" required /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" name="date" /></div>
+        <div class="form-group"><label>Location</label><input type="text" name="location" /></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea name="description"></textarea></div>
+      <div id="event-form-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('add-event-form');
+      const fd = new FormData(form);
+      const body = Object.fromEntries(fd.entries());
+      try {
+        await api('/events', { method: 'POST', body: JSON.stringify(body) });
+        toast('Event created', 'success');
+        closeModal();
+        renderEvents();
+      } catch (err) {
+        document.getElementById('event-form-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to create event')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+window.openEditEventModal = function(id, name, date, location) {
+  showModal('Edit Event', `
+    <form id="edit-event-form">
+      <div class="form-group"><label>Event Name *</label><input type="text" name="name" value="${esc(name)}" required /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Date</label><input type="date" name="date" value="${esc(date)}" /></div>
+        <div class="form-group"><label>Location</label><input type="text" name="location" value="${esc(location)}" /></div>
+      </div>
+      <div id="event-edit-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('edit-event-form');
+      const fd = new FormData(form);
+      const body = Object.fromEntries(fd.entries());
+      try {
+        await api('/events/' + id, { method: 'PUT', body: JSON.stringify(body) });
+        toast('Event updated', 'success');
+        closeModal();
+        renderEvents();
+      } catch (err) {
+        document.getElementById('event-edit-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to update')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+window.deleteEvent = async function(id) {
+  if (!confirm('Delete this event?')) return;
+  try {
+    await api('/events/' + id, { method: 'DELETE' });
+    toast('Event deleted', 'success');
+    renderEvents();
+  } catch (err) { toast('Failed to delete event', 'error'); }
+};
+
+// ─── SEQUENCES ───────────────────────────────────────────────────────────────
+async function renderSequences() {
+  const content = document.getElementById('content');
+  try {
+    const data = await api('/sequences');
+    const sequences = data.sequences || data || [];
+    content.innerHTML = `
+      <div class="section-header">
+        <h2>Sequences</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddSequenceModal()">＋ New Sequence</button>
+      </div>
+      <div id="seq-list">
+        ${sequences.length === 0 ? `<div class="empty-state"><div class="empty-icon">✉️</div><div class="empty-text">No sequences yet</div><div class="empty-sub">Create your first email sequence to start outreach.</div></div>` :
+          sequences.map(s => `
+            <div class="card" style="margin-bottom:.75rem;cursor:pointer;" onclick="openSequenceEditor('${s.id}')">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                  <strong>${esc(s.name)}</strong>
+                  <div class="text-muted text-sm mt-1">${s._count?.steps ?? s.stepCount ?? 0} steps · ${s._count?.enrollments ?? 0} enrollments</div>
+                </div>
+                <div style="display:flex;gap:.5rem;">
+                  <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openSequenceEditor('${s.id}')">Edit Steps</button>
+                  <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSequence('${s.id}')">✕</button>
+                </div>
+              </div>
+            </div>`).join('')}
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load sequences.</div>`;
+  }
+}
+
+window.openAddSequenceModal = function() {
+  showModal('New Sequence', `
+    <form id="add-seq-form">
+      <div class="form-group"><label>Sequence Name *</label><input type="text" name="name" required placeholder="e.g. Event Follow-up" /></div>
+      <div class="form-group"><label>Description</label><textarea name="description" rows="2"></textarea></div>
+      <div id="seq-form-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('add-seq-form');
+      const fd = new FormData(form);
+      const body = Object.fromEntries(fd.entries());
+      try {
+        const res = await api('/sequences', { method: 'POST', body: JSON.stringify(body) });
+        toast('Sequence created', 'success');
+        closeModal();
+        renderSequences();
+      } catch (err) {
+        document.getElementById('seq-form-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to create sequence')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+window.deleteSequence = async function(id) {
+  if (!confirm('Delete this sequence?')) return;
+  try {
+    await api('/sequences/' + id, { method: 'DELETE' });
+    toast('Sequence deleted', 'success');
+    renderSequences();
+  } catch (err) { toast('Failed to delete', 'error'); }
+};
+
+window.openSequenceEditor = async function(seqId) {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const seq = await api('/sequences/' + seqId);
+    const steps = seq.steps || [];
+    const hints = ['{{first_name}}','{{last_name}}','{{company}}','{{event_name}}'];
+
+    content.innerHTML = `
+      <div class="section-header">
+        <button class="btn btn-secondary btn-sm" onclick="renderSequences()">← Back</button>
+        <h2>${esc(seq.name)}</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddStepModal('${seqId}')">＋ Add Step</button>
+      </div>
+      <div class="alert alert-info" style="margin-bottom:1rem;">
+        <div>
+          <strong>Personalization tags:</strong>
+          <div class="hint-tags">
+            ${hints.map(h => `<span class="hint-tag" onclick="copyHint('${h}')" title="Click to copy">${h}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="steps-list" id="steps-list">
+        ${steps.length === 0 ? `<div class="empty-state"><div class="empty-icon">📧</div><div class="empty-text">No steps yet</div><div class="empty-sub">Add the first email step to this sequence.</div></div>` :
+          steps.map((step, i) => `
+            <div class="step-card" id="step-${step.id}">
+              <div class="step-header">
+                <div class="step-num">${i+1}</div>
+                <div class="step-title">${esc(step.subject || 'Step ' + (i+1))}</div>
+                <div class="step-delay">Delay: ${step.delayDays || 0}d</div>
+                <button class="btn btn-secondary btn-sm" onclick="openEditStepModal('${seqId}','${step.id}',${JSON.stringify(step).replace(/"/g,'&quot;')})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteStep('${seqId}','${step.id}')">✕</button>
+              </div>
+              <div class="step-body-preview">${esc(step.body || '')}</div>
+            </div>`).join('')}
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load sequence.</div>`;
+  }
+};
+
+window.copyHint = function(tag) {
+  navigator.clipboard?.writeText(tag).then(() => toast('Copied ' + tag, 'info'));
+};
+
+window.openAddStepModal = function(seqId) {
+  showModal('Add Step', `
+    <form id="add-step-form">
+      <div class="form-group"><label>Subject *</label><input type="text" name="subject" required placeholder="e.g. Following up on {{event_name}}" /></div>
+      <div class="form-group"><label>Body *</label><textarea name="body" rows="6" required placeholder="Hi {{first_name}},&#10;&#10;..."></textarea></div>
+      <div class="form-group"><label>Delay (days after previous step)</label><input type="number" name="delayDays" value="1" min="0" /></div>
+      <div id="step-form-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('add-step-form');
+      const fd = new FormData(form);
+      const body = { subject: fd.get('subject'), body: fd.get('body'), delayDays: parseInt(fd.get('delayDays')||'1') };
+      try {
+        await api('/sequences/' + seqId + '/steps', { method: 'POST', body: JSON.stringify(body) });
+        toast('Step added', 'success');
+        closeModal();
+        openSequenceEditor(seqId);
+      } catch (err) {
+        document.getElementById('step-form-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to add step')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+window.openEditStepModal = function(seqId, stepId, step) {
+  if (typeof step === 'string') { try { step = JSON.parse(step); } catch(e) { step = {}; } }
+  showModal('Edit Step', `
+    <form id="edit-step-form">
+      <div class="form-group"><label>Subject *</label><input type="text" name="subject" value="${esc(step.subject||'')}" required /></div>
+      <div class="form-group"><label>Body *</label><textarea name="body" rows="6" required>${esc(step.body||'')}</textarea></div>
+      <div class="form-group"><label>Delay (days)</label><input type="number" name="delayDays" value="${step.delayDays||0}" min="0" /></div>
+      <div id="step-edit-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('edit-step-form');
+      const fd = new FormData(form);
+      const body = { subject: fd.get('subject'), body: fd.get('body'), delayDays: parseInt(fd.get('delayDays')||'0') };
+      try {
+        await api('/sequences/' + seqId + '/steps/' + stepId, { method: 'PUT', body: JSON.stringify(body) });
+        toast('Step updated', 'success');
+        closeModal();
+        openSequenceEditor(seqId);
+      } catch (err) {
+        document.getElementById('step-edit-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to update step')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+window.deleteStep = async function(seqId, stepId) {
+  if (!confirm('Delete this step?')) return;
+  try {
+    await api('/sequences/' + seqId + '/steps/' + stepId, { method: 'DELETE' });
+    toast('Step deleted', 'success');
+    openSequenceEditor(seqId);
+  } catch (err) { toast('Failed to delete step', 'error'); }
+};
+
+// ─── ENROLLMENTS ─────────────────────────────────────────────────────────────
+async function renderEnrollments() {
+  const content = document.getElementById('content');
+  try {
+    const data = await api('/enrollments');
+    const enrollments = data.enrollments || data || [];
+    content.innerHTML = `
+      <div class="section-header">
+        <h2>Enrollments</h2>
+        <button class="btn btn-primary btn-sm" onclick="openBulkEnrollModal()">＋ Enroll Contacts</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Contact</th><th>Sequence</th><th>Status</th><th>Next Send</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${enrollments.length === 0 ? `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🔄</div><div class="empty-text">No enrollments yet</div></div></td></tr>` :
+              enrollments.map(e => `
+                <tr>
+                  <td><strong>${esc(e.contact?.firstName||'')} ${esc(e.contact?.lastName||'')}</strong><div class="text-muted text-sm">${esc(e.contact?.email||'')}</div></td>
+                  <td>${esc(e.sequence?.name||'—')}</td>
+                  <td><span class="badge badge-${(e.status||'active').toLowerCase()}">${esc(e.status||'active')}</span></td>
+                  <td>${e.nextSendAt ? new Date(e.nextSendAt).toLocaleString() : '—'}</td>
+                  <td>
+                    ${e.status === 'active' ? `<button class="btn btn-secondary btn-sm" onclick="pauseEnrollment('${e.id}')">Pause</button>` : ''}
+                    ${e.status === 'paused' ? `<button class="btn btn-success btn-sm" onclick="resumeEnrollment('${e.id}')">Resume</button>` : ''}
+                  </td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load enrollments.</div>`;
+  }
+}
+
+window.pauseEnrollment = async function(id) {
+  try { await api('/enrollments/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'paused' }) }); toast('Paused', 'info'); renderEnrollments(); }
+  catch (err) { toast('Failed', 'error'); }
+};
+window.resumeEnrollment = async function(id) {
+  try { await api('/enrollments/' + id, { method: 'PATCH', body: JSON.stringify({ status: 'active' }) }); toast('Resumed', 'success'); renderEnrollments(); }
+  catch (err) { toast('Failed', 'error'); }
+};
+
+window.openBulkEnrollModal = async function() {
+  let contacts = [], sequences = [];
+  try {
+    [contacts, sequences] = await Promise.all([
+      api('/contacts?limit=100').then(d => d.contacts || []),
+      api('/sequences').then(d => d.sequences || d || []),
+    ]);
+  } catch(e) {}
+  showModal('Enroll Contacts', `
+    <form id="bulk-enroll-form">
+      <div class="form-group">
+        <label>Select Sequence *</label>
+        <select name="sequenceId" required>
+          <option value="">-- choose --</option>
+          ${sequences.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Select Contacts *</label>
+        <div class="checkbox-list">
+          ${contacts.map(c => `
+            <label class="checkbox-item">
+              <input type="checkbox" name="contactIds" value="${c.id}" />
+              ${esc(c.firstName)} ${esc(c.lastName)} <span class="text-muted text-sm">&lt;${esc(c.email)}&gt;</span>
+            </label>`).join('')}
+        </div>
+      </div>
+      <div id="bulk-enroll-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('bulk-enroll-form');
+      const sequenceId = form.querySelector('[name=sequenceId]').value;
+      const checked = [...form.querySelectorAll('[name=contactIds]:checked')].map(el => el.value);
+      if (!sequenceId) { document.getElementById('bulk-enroll-error').innerHTML='<div class="alert alert-error">Select a sequence</div>'; return false; }
+      if (!checked.length) { document.getElementById('bulk-enroll-error').innerHTML='<div class="alert alert-error">Select at least one contact</div>'; return false; }
+      try {
+        await api('/enrollments', { method: 'POST', body: JSON.stringify({ contactIds: checked, sequenceId }) });
+        toast(`Enrolled ${checked.length} contact(s)`, 'success');
+        closeModal();
+        renderEnrollments();
+      } catch (err) {
+        document.getElementById('bulk-enroll-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Enrollment failed')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+// ─── INBOX ───────────────────────────────────────────────────────────────────
+async function renderInbox() {
+  const content = document.getElementById('content');
+  try {
+    const data = await api('/inbox');
+    const messages = data.messages || data || [];
+    content.innerHTML = `
+      <div class="section-header">
+        <h2>Inbox — Replied Messages</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>From</th><th>Subject</th><th>Received</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${messages.length === 0 ? `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📥</div><div class="empty-text">Inbox is empty</div><div class="empty-sub">Replies will appear here.</div></div></td></tr>` :
+              messages.map(m => `
+                <tr>
+                  <td><strong>${esc(m.fromName||m.fromEmail||'Unknown')}</strong><div class="text-muted text-sm">${esc(m.fromEmail||'')}</div></td>
+                  <td>${esc(m.subject||'(no subject)')}</td>
+                  <td>${m.receivedAt ? new Date(m.receivedAt).toLocaleString() : '—'}</td>
+                  <td><span class="badge ${m.repliedMarked ? 'badge-qualified' : 'badge-default'}">${m.repliedMarked ? 'Marked' : 'New'}</span></td>
+                  <td>${!m.repliedMarked ? `<button class="btn btn-success btn-sm" onclick="markReplied('${m.id}')">✓ Mark Replied</button>` : '<span class="text-muted text-sm">—</span>'}</td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load inbox.</div>`;
+  }
+}
+
+window.markReplied = async function(id) {
+  try {
+    await api('/inbox/' + id + '/replied', { method: 'PATCH' });
+    toast('Marked as replied', 'success');
+    renderInbox();
+  } catch (err) { toast('Failed', 'error'); }
+};
+
+// ─── PIPELINE ────────────────────────────────────────────────────────────────
+async function renderPipeline() {
+  const content = document.getElementById('content');
+  const stages = ['Prospect','Contacted','Replied','Qualified','Closed','Lost'];
+  try {
+    const data = await api('/contacts?limit=500');
+    const contacts = data.contacts || [];
+    const byStage = {};
+    stages.forEach(s => byStage[s] = []);
+    contacts.forEach(c => {
+      const s = c.stage || 'Prospect';
+      if (byStage[s]) byStage[s].push(c);
+      else byStage['Prospect'].push(c);
+    });
+    const stageColors = {
+      Prospect:'#e0e7ff', Contacted:'#dbeafe', Replied:'#fef3c7',
+      Qualified:'#d1fae5', Closed:'#dcfce7', Lost:'#fee2e2'
+    };
+    content.innerHTML = `
+      <div class="section-header" style="margin-bottom:1rem;">
+        <h2>Pipeline Board</h2>
+        <span class="text-muted text-sm">${contacts.length} total contacts</span>
+      </div>
+      <div class="kanban">
+        ${stages.map(s => `
+          <div class="kanban-col">
+            <div class="kanban-col-header" style="border-top:3px solid ${stageColors[s]};">
+              ${s}
+              <span class="kanban-col-count">${byStage[s].length}</span>
+            </div>
+            <div class="kanban-cards">
+              ${byStage[s].length === 0 ? `<div class="text-muted text-sm" style="padding:.5rem;text-align:center;">Empty</div>` :
+                byStage[s].map(c => `
+                  <div class="kanban-card" onclick="openContactDetailModal('${c.id}')">
+                    <div class="kanban-card-name">${esc(c.firstName)} ${esc(c.lastName)}</div>
+                    <div class="kanban-card-sub">${esc(c.company||c.email||'')}</div>
+                  </div>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load pipeline.</div>`;
+  }
+}
+
+window.openContactDetailModal = async function(id) {
+  let contact = {};
+  try { contact = await api('/contacts/' + id); } catch(e) {}
+  const stages = ['Prospect','Contacted','Replied','Qualified','Closed','Lost'];
+  showModal(`${esc(contact.firstName||'')} ${esc(contact.lastName||'')}`, `
+    <div class="contact-modal-detail">
+      <p><strong>Email:</strong> ${esc(contact.email||'—')}</p>
+      <p><strong>Company:</strong> ${esc(contact.company||'—')}</p>
+      <p><strong>Title:</strong> ${esc(contact.title||'—')}</p>
+      <p><strong>Stage:</strong> ${stageBadge(contact.stage)}</p>
+      <hr class="divider"/>
+      <div class="form-group">
+        <label>Move to Stage</label>
+        <select id="detail-stage-sel">
+          ${stages.map(s => `<option value="${s}" ${contact.stage===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>`,
+    async () => {
+      const stage = document.getElementById('detail-stage-sel').value;
+      try {
+        await api('/contacts/' + id + '/stage', { method: 'PATCH', body: JSON.stringify({ stage }) });
+        toast('Stage updated', 'success');
+        closeModal();
+        renderPipeline();
+      } catch (err) {
+        toast('Failed to update stage', 'error');
+        return false;
+      }
+    },
+    'Save'
+  );
+};
+
+// ─── EMAIL ACCOUNTS ──────────────────────────────────────────────────────────
+async function renderEmailAccounts() {
+  const content = document.getElementById('content');
+  try {
+    const data = await api('/email-accounts');
+    const accounts = data.accounts || data || [];
+    content.innerHTML = `
+      <div class="section-header">
+        <h2>Email Accounts</h2>
+      </div>
+      <div class="two-col" style="margin-bottom:1.5rem;">
+        <div class="card">
+          <div class="card-title">Connect Gmail (OAuth)</div>
+          <p class="text-muted text-sm mb-1">Connect a Gmail account via Google OAuth for secure email sending.</p>
+          <button class="btn btn-primary" onclick="connectGmail()">🔗 Connect Gmail</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Add SMTP Account</div>
+          <form id="smtp-form">
+            <div class="form-group"><label>Email *</label><input type="email" name="email" required placeholder="you@example.com"/></div>
+            <div class="form-group"><label>SMTP Host *</label><input type="text" name="host" required placeholder="smtp.example.com"/></div>
+            <div class="form-row">
+              <div class="form-group"><label>Port</label><input type="number" name="port" value="587"/></div>
+              <div class="form-group"><label>User</label><input type="text" name="user" /></div>
+            </div>
+            <div class="form-group"><label>Password</label><input type="password" name="pass" /></div>
+            <div class="form-group" style="display:flex;align-items:center;gap:.5rem;">
+              <input type="checkbox" name="secure" id="smtp-secure" style="width:auto;"/>
+              <label for="smtp-secure" style="margin:0;">Use TLS/SSL</label>
+            </div>
+            <div id="smtp-error"></div>
+            <button type="submit" class="btn btn-primary">Add SMTP</button>
+          </form>
+        </div>
+      </div>
+      <div class="section-header"><h2>Connected Accounts</h2></div>
+      <div class="account-grid" id="account-list">
+        ${accounts.length === 0 ? `<div class="empty-state"><div class="empty-icon">⚙️</div><div class="empty-text">No accounts connected</div></div>` :
+          accounts.map(a => `
+            <div class="account-card">
+              <div class="account-icon">${a.provider === 'gmail' ? '📧' : '🖥️'}</div>
+              <div class="account-info">
+                <div class="account-email">${esc(a.email)}</div>
+                <div class="account-type">${esc(a.provider||'SMTP')} · <span class="badge ${a.active ? 'badge-active' : 'badge-default'}">${a.active ? 'Active' : 'Inactive'}</span></div>
+              </div>
+              <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEmailAccount('${a.id}')">✕</button>
+            </div>`).join('')}
+      </div>`;
+
+    document.getElementById('smtp-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = {
+        email: fd.get('email'), host: fd.get('host'),
+        port: parseInt(fd.get('port')||'587'), user: fd.get('user'),
+        pass: fd.get('pass'), secure: fd.get('secure') === 'on',
+      };
+      try {
+        await api('/email-accounts/smtp', { method: 'POST', body: JSON.stringify(body) });
+        toast('SMTP account added', 'success');
+        e.target.reset();
+        renderEmailAccounts();
+      } catch (err) {
+        document.getElementById('smtp-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to add account')}</div>`;
+      }
+    });
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load email accounts.</div>`;
+  }
+}
+
+window.connectGmail = async function() {
+  try {
+    const data = await api('/email-accounts/oauth/url');
+    if (data.url) window.location.href = data.url;
+    else toast('OAuth URL not available', 'error');
+  } catch (err) { toast('Failed to get OAuth URL', 'error'); }
+};
+
+window.deleteEmailAccount = async function(id) {
+  if (!confirm('Remove this email account?')) return;
+  try {
+    await api('/email-accounts/' + id, { method: 'DELETE' });
+    toast('Account removed', 'success');
+    renderEmailAccounts();
+  } catch (err) { toast('Failed to remove account', 'error'); }
+};
+
+// ─── USERS ───────────────────────────────────────────────────────────────────
+async function renderUsers() {
+  const content = document.getElementById('content');
+  if (state.user?.role !== 'admin') {
+    content.innerHTML = `<div class="alert alert-error">🔒 Admin access required.</div>`;
+    return;
+  }
+  try {
+    const data = await api('/users');
+    const users = data.users || data || [];
+    content.innerHTML = `
+      <div class="section-header">
+        <h2>Users</h2>
+        <button class="btn btn-primary btn-sm" onclick="openInviteUserModal()">＋ Invite User</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${users.length === 0 ? `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🧑‍💼</div><div class="empty-text">No users found</div></div></td></tr>` :
+              users.map(u => `
+                <tr>
+                  <td><strong>${esc(u.name||'')}</strong></td>
+                  <td>${esc(u.email)}</td>
+                  <td><span class="badge ${u.role==='admin'?'badge-qualified':'badge-default'}">${esc(u.role||'user')}</span></td>
+                  <td>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+                  <td>
+                    ${u.id !== state.user?.id ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">✕</button>` : '<span class="text-muted text-sm">You</span>'}
+                  </td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (err) {
+    content.innerHTML = `<div class="alert alert-error">Failed to load users. Admin access required.</div>`;
+  }
+}
+
+window.openInviteUserModal = function() {
+  showModal('Invite User', `
+    <form id="invite-user-form">
+      <div class="form-group"><label>Full Name *</label><input type="text" name="name" required /></div>
+      <div class="form-group"><label>Email *</label><input type="email" name="email" required /></div>
+      <div class="form-group"><label>Password *</label><input type="password" name="password" required placeholder="Min. 8 characters" /></div>
+      <div class="form-group">
+        <label>Role</label>
+        <select name="role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div id="invite-user-error"></div>
+    </form>`,
+    async () => {
+      const form = document.getElementById('invite-user-form');
+      const fd = new FormData(form);
+      const body = Object.fromEntries(fd.entries());
+      try {
+        await api('/users/invite', { method: 'POST', body: JSON.stringify(body) });
+        toast('User invited', 'success');
+        closeModal();
+        renderUsers();
+      } catch (err) {
+        document.getElementById('invite-user-error').innerHTML =
+          `<div class="alert alert-error">${esc(err?.data?.error || 'Failed to invite user')}</div>`;
+        return false;
+      }
+    }
+  );
+};
+
+window.deleteUser = async function(id) {
+  if (!confirm('Delete this user?')) return;
+  try {
+    await api('/users/' + id, { method: 'DELETE' });
+    toast('User deleted', 'success');
+    renderUsers();
+  } catch (err) { toast('Failed to delete user', 'error'); }
+};
+
+// ─── APOLLO ───────────────────────────────────────────────────────────────────
+async function renderApollo() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="section-header">
+      <h2>Apollo — People Search</h2>
+    </div>
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">Search Filters</div>
+      <form id="apollo-search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Domains (comma-separated)</label>
+            <input type="text" name="domains" placeholder="acme.com, example.org" />
+          </div>
+          <div class="form-group">
+            <label>Titles (comma-separated)</label>
+            <input type="text" name="titles" placeholder="CEO, CTO, VP Sales" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Keywords</label>
+            <input type="text" name="keywords" placeholder="SaaS, B2B" />
+          </div>
+          <div class="form-group">
+            <label>Limit</label>
+            <input type="number" name="limit" value="25" min="1" max="100" />
+          </div>
+        </div>
+        <div id="apollo-search-error"></div>
+        <button type="submit" class="btn btn-primary" id="apollo-search-btn">🔍 Search</button>
+      </form>
+    </div>
+    <div id="apollo-results"></div>`;
+
+  document.getElementById('apollo-search-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('apollo-search-btn');
+    const resultsEl = document.getElementById('apollo-results');
+    const errorEl = document.getElementById('apollo-search-error');
+    btn.disabled = true; btn.textContent = '⏳ Searching…';
+    errorEl.innerHTML = '';
+    resultsEl.innerHTML = '<div class="loading"><div class="spinner"></div><span>Searching Apollo…</span></div>';
+    const fd = new FormData(e.target);
+    const domains = fd.get('domains') ? fd.get('domains').split(',').map(s=>s.trim()).filter(Boolean) : [];
+    const titles = fd.get('titles') ? fd.get('titles').split(',').map(s=>s.trim()).filter(Boolean) : [];
+    const keywords = fd.get('keywords') || '';
+    const limit = parseInt(fd.get('limit')||'25');
+    try {
+      const data = await api('/apollo/search', {
+        method: 'POST',
+        body: JSON.stringify({ domains, titles, keywords, limit })
+      });
+      const people = data.people || data || [];
+      state.pageData.apolloResults = people;
+      if (people.length === 0) {
+        resultsEl.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No results found</div></div>';
+      } else {
+        resultsEl.innerHTML = `
+          <div class="section-header">
+            <h2>Results (${people.length})</h2>
+            <button class="btn btn-primary btn-sm" onclick="importApolloResults()">⬇️ Import All to Contacts</button>
+          </div>
+          <div class="apollo-result-grid">
+            ${people.map((p, i) => `
+              <div class="apollo-card">
+                <div class="apollo-card-name">${esc(p.firstName||p.first_name||'')} ${esc(p.lastName||p.last_name||'')}</div>
+                <div class="apollo-card-meta">
+                  ${p.title ? `<div>${esc(p.title)}</div>` : ''}
+                  ${p.organization?.name || p.company ? `<div>🏢 ${esc(p.organization?.name||p.company||'')}</div>` : ''}
+                  ${p.email ? `<div>✉️ ${esc(p.email)}</div>` : '<div class="text-muted">No email</div>'}
+                  ${p.linkedinUrl || p.linkedin_url ? `<div>🔗 LinkedIn</div>` : ''}
+                </div>
+              </div>`).join('')}
+          </div>`;
+      }
+    } catch (err) {
+      resultsEl.innerHTML = '';
+      errorEl.innerHTML = `<div class="alert alert-error">${esc(err?.data?.error || 'Search failed. Check Apollo API key configuration.')}</div>`;
+    }
+    btn.disabled = false; btn.textContent = '🔍 Search';
+  });
+}
+
+window.importApolloResults = async function() {
+  const people = state.pageData.apolloResults || [];
+  if (!people.length) { toast('No results to import', 'error'); return; }
+  try {
+    const data = await api('/apollo/import', { method: 'POST', body: JSON.stringify({ people }) });
+    toast(`Imported ${data.imported || 0} contacts`, 'success');
+    navigate('#/contacts');
+  } catch (err) {
+    toast(err?.data?.error || 'Import failed', 'error');
+  }
+};
+
+// ─── MODAL HELPER ─────────────────────────────────────────────────────────────
+function showModal(title, bodyHTML, onConfirm, confirmLabel = 'Save') {
+  const existing = document.getElementById('modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title">${esc(title)}</div>
+        <button class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">${bodyHTML}</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        ${onConfirm ? `<button class="btn btn-primary" id="modal-confirm-btn">${esc(confirmLabel)}</button>` : ''}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', handleModalEsc);
+
+  if (onConfirm) {
+    document.getElementById('modal-confirm-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('modal-confirm-btn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
+      const result = await onConfirm();
+      if (result !== false && btn) { btn.disabled = false; btn.textContent = confirmLabel; }
+      else if (btn) { btn.disabled = false; btn.textContent = confirmLabel; }
+    });
+  }
+}
+
+function handleModalEsc(e) {
+  if (e.key === 'Escape') closeModal();
+}
+
+window.closeModal = function() {
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) overlay.remove();
+  document.removeEventListener('keydown', handleModalEsc);
+};
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function debounce(fn, delay) {
+  let t;
+  return function(...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const data = await fetch('/health').then(r => r.json());
+    const banner = document.getElementById('demo-banner');
+    if (data.demoMode && banner) banner.classList.add('visible');
+  } catch(e) {}
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+checkHealth();
+render();
+</script>
 </body>
 </html>
