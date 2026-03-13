@@ -2,6 +2,14 @@
 
 const nodemailer = require('nodemailer');
 
+/**
+ * Returns true when DEMO_MODE env var is set to a truthy string value.
+ * Accepted values: "true", "1", "yes" (case-insensitive).
+ */
+function isDemoMode() {
+  return ['true', '1', 'yes'].includes((process.env.DEMO_MODE || '').toLowerCase().trim());
+}
+
 function providerDefaults(provider) {
   switch ((provider || '').toLowerCase()) {
     case 'gmail':
@@ -33,6 +41,7 @@ function getConfig() {
 
 function getPublicEmailSettings() {
   const cfg = getConfig();
+  const demo = isDemoMode();
   return {
     provider: cfg.provider,
     smtpHost: cfg.host || '',
@@ -40,7 +49,8 @@ function getPublicEmailSettings() {
     smtpSecure: cfg.secure,
     mailFrom: cfg.from || '',
     smtpUser: cfg.user ? maskEmail(cfg.user) : '',
-    configured: Boolean(cfg.user && process.env.SMTP_PASS && (cfg.host || cfg.provider !== 'smtp')),
+    configured: demo || Boolean(cfg.user && process.env.SMTP_PASS && (cfg.host || cfg.provider !== 'smtp')),
+    ...(demo && { demo: true }),
   };
 }
 
@@ -69,6 +79,11 @@ function createTransport() {
 }
 
 async function sendMail({ to, subject, text, html }) {
+  if (isDemoMode()) {
+    const recipients = Array.isArray(to) ? to.join(', ') : to;
+    console.log(`DEMO_MODE: simulated email send | to="${recipients}" subject="${subject}"`);
+    return { demo: true, accepted: Array.isArray(to) ? to : [to], rejected: [] };
+  }
   const cfg = getConfig();
   const transport = createTransport();
   return transport.sendMail({
@@ -83,4 +98,5 @@ async function sendMail({ to, subject, text, html }) {
 module.exports = {
   getPublicEmailSettings,
   sendMail,
+  isDemoMode,
 };

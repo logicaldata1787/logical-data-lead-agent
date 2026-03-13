@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { getPublicEmailSettings, sendMail } = require('../services/mailer');
+const { getPublicEmailSettings, sendMail, isDemoMode } = require('../services/mailer');
 
 router.get('/', (req, res) => {
   res.json(getPublicEmailSettings());
@@ -20,7 +20,9 @@ router.post('/test', async (req, res) => {
       text: 'If you received this, your SMTP configuration is working.',
     });
 
-    res.json({ ok: true, sentTo: to });
+    const response = { ok: true, sentTo: to };
+    if (isDemoMode()) response.demo = true;
+    res.json(response);
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
