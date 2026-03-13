@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  role          String   @default("user") // "admin" | "user"
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  emailAccounts UserEmailAccount[]
+  sequences     Sequence[]
+  enrollments   Enrollment[]
+  activityLogs  ActivityLog[]
+}
+
+model UserEmailAccount {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String   // "gmail_oauth" | "smtp"
+  email         String
+  // Gmail OAuth
+  accessToken   String?
+  refreshToken  String?
+  tokenExpiry   DateTime?
+  // SMTP
+  smtpHost      String?
+  smtpPort      Int?
+  smtpSecure    Boolean?
+  smtpUser      String?
+  smtpPass      String?
+  dailyLimit    Int      @default(200)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailMessages EmailMessage[]
+
+  @@unique([userId, email])
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  domain      String   @unique
+  industry    String?
+  size        String?
+  hqCity      String?
+  hqCountry   String?
+  linkedinUrl String?
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contacts    Contact[]
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  name        String
+  website     String?
+  location    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contacts    Contact[]
+  enrollments Enrollment[]
+}
+
+model Contact {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  firstName     String?
+  lastName      String?
+  title         String?
+  companyId     String?
+  companyName   String?
+  eventId       String?
+  linkedinUrl   String?
+  phone         String?
+  source        String?  // "csv" | "apollo" | "manual"
+  apolloId      String?
+  stage         String   @default("prospect") // prospect | contacted | replied | qualified | closed | lost
+  doNotContact  Boolean  @default(false)
+  unsubscribed  Boolean  @default(false)
+  notes         String?
+  tags          String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company       Company?  @relation(fields: [companyId], references: [id])
+  event         Event?    @relation(fields: [eventId], references: [id])
+  enrollments   Enrollment[]
+  emailMessages EmailMessage[]
+  activityLogs  ActivityLog[]
+}
+
+model Sequence {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+  steps       SequenceStep[]
+  enrollments Enrollment[]
+}
+
+model SequenceStep {
+  id          String   @id @default(uuid())
+  sequenceId  String
+  stepNumber  Int
+  subject     String
+  body        String
+  delayDays   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sequence    Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  emailMessages EmailMessage[]
+
+  @@unique([sequenceId, stepNumber])
+}
+
+model Enrollment {
+  id          String   @id @default(uuid())
+  contactId   String
+  sequenceId  String
+  userId      String
+  eventId     String?
+  status      String   @default("active") // active | paused | completed | unsubscribed | replied
+  currentStep Int      @default(0)
+  nextSendAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sequence    Sequence @relation(fields: [sequenceId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  event       Event?   @relation(fields: [eventId], references: [id])
+  emailMessages EmailMessage[]
+
+  @@unique([contactId, sequenceId])
+}
+
+model EmailMessage {
+  id              String   @id @default(uuid())
+  enrollmentId    String?
+  contactId       String
+  sequenceStepId  String?
+  emailAccountId  String?
+  direction       String   @default("out") // "out" | "in"
+  subject         String?
+  body            String?
+  sentAt          DateTime?
+  openedAt        DateTime?
+  repliedAt       DateTime?
+  bouncedAt       DateTime?
+  status          String   @default("scheduled") // scheduled | sent | opened | replied | bounced | failed | simulated
+  messageId       String?  // gmail message id
+  threadId        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  enrollment      Enrollment?      @relation(fields: [enrollmentId], references: [id])
+  contact         Contact          @relation(fields: [contactId], references: [id])
+  sequenceStep    SequenceStep?    @relation(fields: [sequenceStepId], references: [id])
+  emailAccount    UserEmailAccount? @relation(fields: [emailAccountId], references: [id])
+}
+
+model Suppression {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  reason      String?  // "unsubscribe" | "bounce" | "spam" | "manual"
+  token       String?  @unique
+  createdAt   DateTime @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  contactId   String?
+  type        String   // "login" | "csv_import" | "email_sent" | "email_opened" | "replied" | "unsubscribed" | "stage_changed" | ...
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id])
+  contact     Contact? @relation(fields: [contactId], references: [id])
+}
