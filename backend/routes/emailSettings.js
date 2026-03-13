@@ -9,7 +9,6 @@ router.get('/', (req, res) => {
   res.json(getPublicEmailSettings());
 });
 
-// Send a real test email to verify SMTP works
 router.post('/test', async (req, res) => {
   try {
     const { to } = req.body || {};
