@@ -11,9 +11,11 @@ function personalize(template, vars) {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] || '');
 }
 
+const MAILING_ADDRESS = process.env.MAILING_ADDRESS || '[Company Name, 123 Main St, City, ST 00000, USA]';
+
 function addUnsubscribeFooter(html, token) {
   const link = `${UNSUBSCRIBE_BASE}/unsubscribe?token=${token}`;
-  return html + `\n\n<p style="font-size:12px;color:#888;">Don't want to receive these emails? <a href="${link}">Unsubscribe</a></p>`;
+  return html + `\n\n<p style="font-size:12px;color:#888;">Don't want to receive these emails? <a href="${link}">Unsubscribe</a><br>${MAILING_ADDRESS}</p>`;
 }
 
 async function processEnrollments() {
@@ -121,4 +123,4 @@ function startWorker(intervalMs = 60000) {
   setTimeout(processEnrollments, 5000);
 }
 
-module.exports = { startWorker, processEnrollments };
+module.exports = { startWorker, processEnrollments, personalize, addUnsubscribeFooter };
