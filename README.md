@@ -62,6 +62,9 @@ MAIL_FROM=your@gmail.com
 # Apollo.io (sourcing)
 APOLLO_API_KEY=<your Apollo API key>
 
+# Compliance — appears in every email footer (CAN-SPAM / GDPR)
+MAILING_ADDRESS=Your Company Name, 123 Main St, City, ST 00000, USA
+
 # Demo mode (set to true during testing, false in production)
 DEMO_MODE=true
 ```
@@ -158,10 +161,12 @@ Use these in sequence step subject/body:
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/auth/login` | Login |
+| POST | `/api/auth/logout` | Logout (client discards JWT) |
 | GET | `/api/auth/me` | Current user |
 | GET/POST | `/api/users` | List / invite users (admin) |
 | GET/POST | `/api/contacts` | List / create contacts |
 | POST | `/api/contacts/import` | CSV upload |
+| POST | `/api/contacts/import-csv` | CSV upload (spec-named alias) |
 | PATCH | `/api/contacts/:id/stage` | Update pipeline stage |
 | GET/POST/PUT/DELETE | `/api/events` | Events CRUD |
 | GET/POST/PUT/DELETE | `/api/sequences` | Sequences + steps CRUD |

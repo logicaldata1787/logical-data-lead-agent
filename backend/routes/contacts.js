@@ -113,8 +113,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/contacts/import — CSV upload
-router.post('/import', requireAuth, upload.single('file'), async (req, res) => {
+// POST /api/contacts/import-csv — CSV upload (spec-named alias, same handler)
+// POST /api/contacts/import — CSV upload (legacy path)
+async function handleCsvImport(req, res) {
   if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
   try {
     const content = req.file.buffer.toString('utf8');
@@ -160,7 +161,10 @@ router.post('/import', requireAuth, upload.single('file'), async (req, res) => {
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
-});
+}
+
+router.post('/import', requireAuth, upload.single('file'), handleCsvImport);
+router.post('/import-csv', requireAuth, upload.single('file'), handleCsvImport);
 
 // PATCH /api/contacts/:id/stage — set pipeline stage
 router.patch('/:id/stage', requireAuth, async (req, res) => {

@@ -22,6 +22,12 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/logout — client-side; invalidation is optional server-side
+router.post('/logout', requireAuth, (req, res) => {
+  // JWT is stateless; clients should discard the token.
+  res.json({ ok: true, message: 'Logged out' });
+});
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   try {
