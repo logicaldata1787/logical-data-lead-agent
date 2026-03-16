@@ -1,7 +1,6 @@
 'use strict';
 
 const crypto = require('crypto');
-const prisma = require('../db/prisma');
 const { sendEmail } = require('./sender');
 const { isDemoMode } = require('./mailer');
 
@@ -19,6 +18,7 @@ function addUnsubscribeFooter(html, token) {
 }
 
 async function processEnrollments() {
+  const prisma = require('../db/prisma');
   const now = new Date();
   try {
     const due = await prisma.enrollment.findMany({
