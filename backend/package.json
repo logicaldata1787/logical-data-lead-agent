@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "smoke:test": "node scripts/smoke-test.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
