@@ -2,6 +2,7 @@
 
 const {
   createLeadGenerationPlan,
+  createExecutableSequenceSteps,
   normalizeEventName,
   inferYear,
 } = require('../services/eventLeadAgent');
@@ -37,5 +38,16 @@ describe('eventLeadAgent', () => {
     expect(plan.outreachCadence[2].channel).toBe('call');
     expect(plan.offer.idealCustomerProfile).toBe('B2B agencies and SaaS firms');
     expect(plan.performanceKPIs.length).toBeGreaterThan(2);
+  });
+
+  test('createExecutableSequenceSteps maps only email cadence touches', () => {
+    const plan = createLeadGenerationPlan({ eventName: 'Money20/20 2027' });
+    const steps = createExecutableSequenceSteps(plan);
+
+    expect(steps).toHaveLength(3);
+    expect(steps[0].stepNumber).toBe(1);
+    expect(steps[0].delayDays).toBe(0);
+    expect(steps[1].delayDays).toBeGreaterThanOrEqual(1);
+    expect(steps[0].subject).toContain('Money20/20 2027');
   });
 });

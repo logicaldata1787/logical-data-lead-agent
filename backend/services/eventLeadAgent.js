@@ -142,6 +142,28 @@ function buildKPIs() {
   ];
 }
 
+
+function createExecutableSequenceSteps(plan) {
+  const cadence = Array.isArray(plan?.outreachCadence) ? plan.outreachCadence : [];
+  const emailTouches = cadence
+    .filter((touch) => touch.channel === 'email' && touch.template?.subject && touch.template?.body)
+    .sort((a, b) => Number(a.day || 0) - Number(b.day || 0));
+
+  return emailTouches.map((touch, index) => {
+    const priorDay = index === 0 ? 0 : Number(emailTouches[index - 1].day || 0);
+    const day = Number(touch.day || 0);
+    const delayDays = Math.max(0, day - priorDay);
+
+    return {
+      stepNumber: index + 1,
+      delayDays,
+      subject: touch.template.subject,
+      body: touch.template.body,
+      objective: touch.objective,
+    };
+  });
+}
+
 function createLeadGenerationPlan(input = {}) {
   const brandName = sanitizeString(input.brandName, 'Logical Data Solution');
   const website = sanitizeString(input.brandWebsite, 'logicaldatasolution.com');
@@ -185,6 +207,7 @@ function createLeadGenerationPlan(input = {}) {
 
 module.exports = {
   createLeadGenerationPlan,
+  createExecutableSequenceSteps,
   normalizeEventName,
   inferYear,
 };
