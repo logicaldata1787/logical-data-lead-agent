@@ -196,6 +196,25 @@ Remove `DEMO_MODE` (or set to `false`) before going live.
 
 ---
 
+
+## Quick Smoke Test (No Real Email Sending)
+
+After dependencies are installed, run:
+
+```bash
+cd backend
+npm run smoke:test
+```
+
+This starts the backend in demo-safe mode (`DEMO_MODE=true`, `DISABLE_WORKER=true`) and validates:
+- server boots successfully
+- `GET /health` returns `status: UP`
+- auth guard rejects unauthenticated `GET /api/auth/me` with `401`
+
+Useful before full UI workflow testing or deployment.
+
+---
+
 ## Local Development
 
 ```bash
