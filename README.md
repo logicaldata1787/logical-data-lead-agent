@@ -182,7 +182,6 @@ Use these in sequence step subject/body:
 | POST | `/api/apollo/search` | Apollo people search |
 | POST | `/api/apollo/import` | Import Apollo results |
 | POST | `/api/agent/event-plan` | Generate a tradeshow/conference revenue plan (sourcing, outreach, KPIs, and close workflow) |
-| POST | `/api/agent/event-plan/execute` | Execute generated plan: create event + sequence + enroll contacts |
 | GET | `/unsubscribe?token=...` | Unsubscribe (public) |
 
 ---
@@ -195,6 +194,25 @@ When `DEMO_MODE=true`:
 - A yellow banner appears in the UI
 
 Remove `DEMO_MODE` (or set to `false`) before going live.
+
+---
+
+
+## Quick Smoke Test (No Real Email Sending)
+
+After dependencies are installed, run:
+
+```bash
+cd backend
+npm run smoke:test
+```
+
+This starts the backend in demo-safe mode (`DEMO_MODE=true`, `DISABLE_WORKER=true`) and validates:
+- server boots successfully
+- `GET /health` returns `status: UP`
+- auth guard rejects unauthenticated `GET /api/auth/me` with `401`
+
+Useful before full UI workflow testing or deployment.
 
 ---
 
