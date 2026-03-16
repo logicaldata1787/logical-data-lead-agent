@@ -140,6 +140,7 @@ Each team member adds their SMTP account via **Email Accounts → Add SMTP Accou
 5. **Enroll contacts** — Enrollments page → Enroll → select contacts + sequence
 6. **Monitor** — Dashboard shows stats; Inbox shows replies; Pipeline shows stages
 7. **Unsubscribes** — handled automatically; link in every email footer
+8. **Agent execution (optional)** — call `POST /api/agent/event-plan/execute` to auto-create event, sequence, and enroll selected contacts
 
 ---
 
