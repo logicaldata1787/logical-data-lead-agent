@@ -20,6 +20,7 @@ const unsubscribeRoutes = require('./routes/unsubscribe');
 const analyticsRoutes = require('./routes/analytics');
 const apolloRoutes = require('./routes/apollo');
 const emailSettingsRoutes = require('./routes/emailSettings');
+const agentRoutes = require('./routes/agent');
 const { isDemoMode } = require('./services/mailer');
 const { startWorker } = require('./services/worker');
 
@@ -64,6 +65,7 @@ app.use('/api/inbox', inboxRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/apollo', apolloRoutes);
 app.use('/api/email-settings', emailSettingsRoutes);
+app.use('/api/agent', agentRoutes);
 
 // Unsubscribe (public, no /api prefix so link works)
 app.use('/unsubscribe', unsubscribeRoutes);
