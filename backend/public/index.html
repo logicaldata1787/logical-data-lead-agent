@@ -313,6 +313,7 @@ const routes = {
   '#/email-accounts': 'emailAccounts',
   '#/users': 'users',
   '#/apollo': 'apollo',
+  '#/event-agent': 'eventAgent',
 };
 
 function getPage() {
@@ -359,7 +360,7 @@ async function render() {
   const pageTitles = {
     dashboard: 'Dashboard', contacts: 'Contacts', events: 'Events',
     sequences: 'Sequences', enrollments: 'Enrollments', inbox: 'Inbox',
-    pipeline: 'Pipeline', emailAccounts: 'Email Accounts', users: 'Users', apollo: 'Apollo'
+    pipeline: 'Pipeline', emailAccounts: 'Email Accounts', users: 'Users', apollo: 'Apollo', eventAgent: 'Event Agent'
   };
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = pageTitles[page] || '';
@@ -378,6 +379,7 @@ async function render() {
     emailAccounts: renderEmailAccounts,
     users: renderUsers,
     apollo: renderApollo,
+    eventAgent: renderEventAgent,
   };
   if (fns[page]) await fns[page]();
 }
@@ -407,6 +409,7 @@ function renderShell() {
         <div class="sidebar-section">
           <div class="sidebar-label">Tools</div>
           <a class="nav-item" data-route="#/apollo" href="#/apollo"><span class="nav-icon">🔍</span>Apollo</a>
+          <a class="nav-item" data-route="#/event-agent" href="#/event-agent"><span class="nav-icon">🤖</span>Event Agent</a>
           <a class="nav-item" data-route="#/users" href="#/users"><span class="nav-icon">🧑‍💼</span>Users</a>
         </div>
         <div class="sidebar-user">
@@ -1512,6 +1515,117 @@ window.importApolloResults = async function() {
     toast(err?.data?.error || 'Import failed', 'error');
   }
 };
+
+
+
+async function renderEventAgent() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="card">
+      <div class="section-header">
+        <h2>Event Agent — Generate & Execute</h2>
+      </div>
+      <p class="text-muted mb-1">Generate a tradeshow/conference plan and optionally execute it into Event + Sequence + Enrollments.</p>
+      <form id="event-agent-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Event Name *</label>
+            <input name="eventName" required placeholder="e.g., CES 2027" />
+          </div>
+          <div class="form-group">
+            <label>Target Persona</label>
+            <input name="targetPersona" placeholder="e.g., Demand Gen Managers" />
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Offer</label>
+            <input name="offer" placeholder="verified B2B contacts" />
+          </div>
+          <div class="form-group">
+            <label>Ideal Customer Profile</label>
+            <input name="idealCustomerProfile" placeholder="B2B SaaS teams" />
+          </div>
+          <div class="form-group">
+            <label>Coverage Goal</label>
+            <input name="coverageGoal" placeholder="2500 contacts" />
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Source Event ID (optional)</label>
+            <input name="sourceEventId" placeholder="use contacts from an existing event" />
+          </div>
+          <div class="form-group">
+            <label>Reuse Event ID (optional)</label>
+            <input name="reuseEventId" placeholder="existing event id" />
+          </div>
+          <div class="form-group">
+            <label>Reuse Sequence ID (optional)</label>
+            <input name="reuseSequenceId" placeholder="existing sequence id" />
+          </div>
+        </div>
+        <div class="inline-form mt-1">
+          <button class="btn btn-secondary" type="button" id="event-agent-generate-btn">🧠 Generate Plan</button>
+          <button class="btn btn-primary" type="button" id="event-agent-execute-btn">🚀 Execute Plan</button>
+        </div>
+      </form>
+      <hr class="divider" />
+      <div id="event-agent-output" class="text-sm text-muted">No plan generated yet.</div>
+    </div>`;
+
+  function getPayload() {
+    const fd = new FormData(document.getElementById('event-agent-form'));
+    const payload = {};
+    for (const [k, v] of fd.entries()) {
+      const value = String(v || '').trim();
+      if (value) payload[k] = value;
+    }
+    return payload;
+  }
+
+  function renderJson(title, data) {
+    const out = document.getElementById('event-agent-output');
+    out.innerHTML = `
+      <div class="card" style="background: var(--surface);">
+        <div class="card-title">${esc(title)}</div>
+        <pre style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin-top: .5rem;">${esc(JSON.stringify(data, null, 2))}</pre>
+      </div>`;
+  }
+
+  document.getElementById('event-agent-generate-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('event-agent-generate-btn');
+    const payload = getPayload();
+    if (!payload.eventName) { toast('Event name is required', 'error'); return; }
+    try {
+      btn.disabled = true; btn.textContent = '⏳ Generating…';
+      const data = await api('/agent/event-plan', { method: 'POST', body: JSON.stringify(payload) });
+      state.pageData.eventAgentPlan = data;
+      renderJson('Generated Plan', data);
+      toast('Plan generated', 'success');
+    } catch (err) {
+      toast(err?.data?.error || 'Failed to generate plan', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '🧠 Generate Plan';
+    }
+  });
+
+  document.getElementById('event-agent-execute-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('event-agent-execute-btn');
+    const payload = getPayload();
+    if (!payload.eventName) { toast('Event name is required', 'error'); return; }
+    try {
+      btn.disabled = true; btn.textContent = '⏳ Executing…';
+      const data = await api('/agent/event-plan/execute', { method: 'POST', body: JSON.stringify(payload) });
+      renderJson('Execution Result', data);
+      toast(`Executed. Enrolled: ${data?.execution?.enrolled || 0}`, 'success');
+    } catch (err) {
+      toast(err?.data?.error || 'Failed to execute plan', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '🚀 Execute Plan';
+    }
+  });
+}
 
 // ─── MODAL HELPER ─────────────────────────────────────────────────────────────
 function showModal(title, bodyHTML, onConfirm, confirmLabel = 'Save') {
