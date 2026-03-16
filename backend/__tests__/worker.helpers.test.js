@@ -6,6 +6,10 @@
  * - addUnsubscribeFooter() compliance footer (unsubscribe link + mailing address)
  */
 
+// Mock DB and sender so helper imports do not require Prisma generation.
+jest.mock('../db/prisma', () => ({}));
+jest.mock('../services/sender', () => ({ sendEmail: jest.fn() }));
+
 describe('worker – template helpers', () => {
   let worker;
 
