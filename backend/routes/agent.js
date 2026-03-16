@@ -103,6 +103,22 @@ async function resolveCandidateContacts(tx, payload) {
 
 router.post('/event-plan', requireAuth, async (req, res) => {
   const resolvedEventName = resolveEventName(req.body || {});
+const { requireAuth } = require('../middleware/auth');
+const { createLeadGenerationPlan } = require('../services/eventLeadAgent');
+
+router.post('/event-plan', requireAuth, async (req, res) => {
+  const {
+    eventName,
+    prompt,
+    targetPersona,
+    offer,
+    idealCustomerProfile,
+    coverageGoal,
+  } = req.body || {};
+
+  const resolvedEventName = typeof eventName === 'string' && eventName.trim()
+    ? eventName
+    : prompt;
 
   if (!resolvedEventName || typeof resolvedEventName !== 'string' || !resolvedEventName.trim()) {
     return res.status(400).json({ ok: false, error: 'eventName (or prompt) is required' });
@@ -206,6 +222,17 @@ router.post('/event-plan/execute', requireAuth, async (req, res) => {
     const status = /not found|no steps|contactIds/i.test(message) ? 400 : 500;
     return res.status(status).json({ ok: false, error: message });
   }
+  const plan = createLeadGenerationPlan({
+    eventName: resolvedEventName,
+    targetPersona,
+    offer,
+    idealCustomerProfile,
+    coverageGoal,
+    brandName: 'Logical Data Solution',
+    brandWebsite: 'logicaldatasolution.com',
+  });
+
+  return res.json(plan);
 });
 
 module.exports = router;
