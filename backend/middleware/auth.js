@@ -4,15 +4,16 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-if (!JWT_SECRET) {
+let _secret = JWT_SECRET;
+if (!_secret) {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET must be set in production');
+    _secret = `ephemeral-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    console.error('WARNING: JWT_SECRET is not set in production. Using ephemeral in-memory secret; set JWT_SECRET to avoid session invalidation on restart.');
   } else {
     console.warn('WARNING: JWT_SECRET is not set. Using an insecure default for development only.');
+    _secret = 'dev-secret-change-me-do-not-use-in-production';
   }
 }
-
-const _secret = JWT_SECRET || 'dev-secret-change-me-do-not-use-in-production';
 
 function requireAuth(req, res, next) {
   const header = req.headers['authorization'] || '';
