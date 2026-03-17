@@ -148,6 +148,7 @@ Each team member adds their SMTP account via **Email Accounts → Add SMTP Accou
 6. **Monitor** — Dashboard shows stats; Inbox shows replies; Pipeline shows stages
 7. **Unsubscribes** — handled automatically; link in every email footer
 8. **Agent execution (optional)** — call `POST /api/agent/event-plan/execute` to auto-create/reuse event + sequence and enroll selected contacts (transaction-safe)
+8. **Agent execution (optional)** — call `POST /api/agent/event-plan/execute` to auto-create event, sequence, and enroll selected contacts
 
 ---
 
@@ -189,7 +190,7 @@ Use these in sequence step subject/body:
 | POST | `/api/apollo/search` | Apollo people search |
 | POST | `/api/apollo/import` | Import Apollo results |
 | POST | `/api/agent/event-plan` | Generate a tradeshow/conference revenue plan (sourcing, outreach, KPIs, and close workflow) |
-| POST | `/api/agent/event-plan/execute` | Execute generated plan transactionally; supports `reuseEventId`, `reuseSequenceId`, contact enrollment, and guardrails (`maxContacts`/`contactIds` <= 1000) |
+| POST | `/api/agent/event-plan/execute` | Execute generated plan transactionally; supports `reuseEventId`, `reuseSequenceId`, and contact enrollment |
 | GET | `/unsubscribe?token=...` | Unsubscribe (public) |
 
 ---
@@ -202,6 +203,25 @@ When `DEMO_MODE=true`:
 - A yellow banner appears in the UI
 
 Remove `DEMO_MODE` (or set to `false`) before going live.
+
+---
+
+
+## Quick Smoke Test (No Real Email Sending)
+
+After dependencies are installed, run:
+
+```bash
+cd backend
+npm run smoke:test
+```
+
+This starts the backend in demo-safe mode (`DEMO_MODE=true`, `DISABLE_WORKER=true`) and validates:
+- server boots successfully
+- `GET /health` returns `status: UP`
+- auth guard rejects unauthenticated `GET /api/auth/me` with `401`
+
+Useful before full UI workflow testing or deployment.
 
 ---
 

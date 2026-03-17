@@ -91,31 +91,4 @@ describe('agent routes', () => {
     expect(tx.enrollment.upsert).toHaveBeenCalledTimes(1);
     expect(tx.activityLog.create).toHaveBeenCalledTimes(1);
   });
-
-  test('POST /event-plan/execute rejects invalid maxContacts', async () => {
-    const handler = getHandler('/event-plan/execute', 'post');
-    const req = { body: { eventName: 'CES 2027', maxContacts: 'abc' }, user: { id: 'user-1' } };
-    const res = mockRes();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.body.error).toMatch(/maxContacts/);
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
-  });
-
-  test('POST /event-plan/execute rejects too many contactIds', async () => {
-    const handler = getHandler('/event-plan/execute', 'post');
-    const req = {
-      body: { eventName: 'CES 2027', contactIds: new Array(1001).fill('c1') },
-      user: { id: 'user-1' },
-    };
-    const res = mockRes();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.body.error).toMatch(/contactIds cannot exceed/);
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
-  });
 });

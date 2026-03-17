@@ -6,40 +6,6 @@ const prisma = require('../db/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { createLeadGenerationPlan, createExecutableSequenceSteps } = require('../services/eventLeadAgent');
 
-const MAX_CONTACTS_LIMIT = 1000;
-
-function parsePositiveInt(value, fallback) {
-  if (value === undefined || value === null || value === '') return fallback;
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) return null;
-  return parsed;
-}
-
-function isValidDateInput(value) {
-  if (value === undefined || value === null || value === '') return true;
-  const parsed = new Date(value);
-  return !Number.isNaN(parsed.getTime());
-}
-
-function validateExecutionPayload(payload = {}) {
-  if (payload.startDate && !isValidDateInput(payload.startDate)) return 'startDate must be a valid date';
-  if (payload.endDate && !isValidDateInput(payload.endDate)) return 'endDate must be a valid date';
-
-  if (Array.isArray(payload.contactIds)) {
-    if (!payload.contactIds.length) return 'contactIds cannot be an empty array';
-    if (payload.contactIds.length > MAX_CONTACTS_LIMIT) return `contactIds cannot exceed ${MAX_CONTACTS_LIMIT}`;
-    const hasInvalid = payload.contactIds.some((id) => typeof id !== 'string' || !id.trim());
-    if (hasInvalid) return 'contactIds must contain non-empty string ids';
-  }
-
-  const parsedMax = parsePositiveInt(payload.maxContacts, 500);
-  if (parsedMax === null) return 'maxContacts must be a positive integer';
-  if (parsedMax > MAX_CONTACTS_LIMIT) return `maxContacts cannot exceed ${MAX_CONTACTS_LIMIT}`;
-
-  return null;
-}
-
-
 function computeNextSendAt(delayDays) {
   const d = new Date();
   d.setDate(d.getDate() + Number(delayDays || 0));
@@ -130,13 +96,29 @@ async function resolveCandidateContacts(tx, payload) {
   const found = await tx.contact.findMany({
     where: contactWhere,
     select: { id: true },
-    take: parsePositiveInt(payload.maxContacts, 500),
+    take: Number(payload.maxContacts || 500),
   });
   return found.map((c) => c.id);
 }
 
 router.post('/event-plan', requireAuth, async (req, res) => {
   const resolvedEventName = resolveEventName(req.body || {});
+const { requireAuth } = require('../middleware/auth');
+const { createLeadGenerationPlan } = require('../services/eventLeadAgent');
+
+router.post('/event-plan', requireAuth, async (req, res) => {
+  const {
+    eventName,
+    prompt,
+    targetPersona,
+    offer,
+    idealCustomerProfile,
+    coverageGoal,
+  } = req.body || {};
+
+  const resolvedEventName = typeof eventName === 'string' && eventName.trim()
+    ? eventName
+    : prompt;
 
   if (!resolvedEventName || typeof resolvedEventName !== 'string' || !resolvedEventName.trim()) {
     return res.status(400).json({ ok: false, error: 'eventName (or prompt) is required' });
@@ -152,11 +134,6 @@ router.post('/event-plan/execute', requireAuth, async (req, res) => {
 
   if (!resolvedEventName || typeof resolvedEventName !== 'string' || !resolvedEventName.trim()) {
     return res.status(400).json({ ok: false, error: 'eventName (or prompt) is required' });
-  }
-
-  const validationError = validateExecutionPayload(payload);
-  if (validationError) {
-    return res.status(400).json({ ok: false, error: validationError });
   }
 
   const plan = buildPlanFromPayload(payload);
@@ -248,4 +225,18 @@ router.post('/event-plan/execute', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
-module.exports._test = { resolveEventName, buildPlanFromPayload, resolveCandidateContacts, computeNextSendAt, parsePositiveInt, validateExecutionPayload };
+module.exports._test = { resolveEventName, buildPlanFromPayload, resolveCandidateContacts, computeNextSendAt };
+  const plan = createLeadGenerationPlan({
+    eventName: resolvedEventName,
+    targetPersona,
+    offer,
+    idealCustomerProfile,
+    coverageGoal,
+    brandName: 'Logical Data Solution',
+    brandWebsite: 'logicaldatasolution.com',
+  });
+
+  return res.json(plan);
+});
+
+module.exports = router;
