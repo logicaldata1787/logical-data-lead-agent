@@ -18,6 +18,7 @@ Built for Railway deployment with Postgres, Gmail OAuth, and Apollo.io integrati
 - **Pipeline** — 6-stage kanban: Prospect → Contacted → Replied → Qualified → Closed → Lost
 - **Apollo.io integration** — search people by domain/title, import as contacts
 - **Inbox** — view and mark replies; auto-advances pipeline stage
+- **Event Lead Agent** — generate a multi-channel event revenue plan (sourcing workflow, outreach cadence, KPIs, and closing checklist) from an event prompt
 
 ---
 
@@ -65,6 +66,11 @@ APOLLO_API_KEY=<your Apollo API key>
 # Compliance — appears in every email footer (CAN-SPAM / GDPR)
 MAILING_ADDRESS=Your Company Name, 123 Main St, City, ST 00000, USA
 
+# Optional bootstrap admin (auto-create/update on app start)
+BOOTSTRAP_ADMIN_EMAIL=admin@yourcompany.com
+BOOTSTRAP_ADMIN_PASSWORD=StrongPassword123
+BOOTSTRAP_ADMIN_NAME=Admin
+
 # Demo mode (set to true during testing, false in production)
 DEMO_MODE=true
 ```
@@ -87,6 +93,8 @@ DATABASE_URL=<your-url> npx prisma migrate deploy
 ```
 
 ### 5. Create the first admin user
+
+If `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` are set, the app auto-creates/updates an admin on startup (helpful for Railway deploys).
 
 ```bash
 cd backend
@@ -139,6 +147,7 @@ Each team member adds their SMTP account via **Email Accounts → Add SMTP Accou
 5. **Enroll contacts** — Enrollments page → Enroll → select contacts + sequence
 6. **Monitor** — Dashboard shows stats; Inbox shows replies; Pipeline shows stages
 7. **Unsubscribes** — handled automatically; link in every email footer
+8. **Agent execution (optional)** — call `POST /api/agent/event-plan/execute` to auto-create/reuse event + sequence and enroll selected contacts (transaction-safe)
 
 ---
 
@@ -179,6 +188,8 @@ Use these in sequence step subject/body:
 | GET | `/api/analytics` | Dashboard stats |
 | POST | `/api/apollo/search` | Apollo people search |
 | POST | `/api/apollo/import` | Import Apollo results |
+| POST | `/api/agent/event-plan` | Generate a tradeshow/conference revenue plan (sourcing, outreach, KPIs, and close workflow) |
+| POST | `/api/agent/event-plan/execute` | Execute generated plan transactionally; supports `reuseEventId`, `reuseSequenceId`, contact enrollment, and guardrails (`maxContacts`/`contactIds` <= 1000) |
 | GET | `/unsubscribe?token=...` | Unsubscribe (public) |
 
 ---
