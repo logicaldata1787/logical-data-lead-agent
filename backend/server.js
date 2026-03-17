@@ -23,6 +23,7 @@ const emailSettingsRoutes = require('./routes/emailSettings');
 const agentRoutes = require('./routes/agent');
 const { isDemoMode } = require('./services/mailer');
 const { startWorker } = require('./services/worker');
+const { ensureBootstrapAdmin } = require('./services/bootstrap');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -83,14 +84,22 @@ app.get('*', (req, res) => {
 
 // Start email sending worker and listen only when run directly
 if (require.main === module) {
-  if (process.env.DISABLE_WORKER !== 'true') {
-    startWorker(Number(process.env.WORKER_INTERVAL_MS) || 60000);
-  }
+  (async () => {
+    try {
+      await ensureBootstrapAdmin();
+    } catch (err) {
+      console.error('Bootstrap admin setup failed:', err.message);
+    }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    if (isDemoMode()) console.log('DEMO_MODE: enabled — email sends are simulated');
-  });
+    if (process.env.DISABLE_WORKER !== 'true') {
+      startWorker(Number(process.env.WORKER_INTERVAL_MS) || 60000);
+    }
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      if (isDemoMode()) console.log('DEMO_MODE: enabled — email sends are simulated');
+    });
+  })();
 }
 
 module.exports = app;

@@ -66,6 +66,11 @@ APOLLO_API_KEY=<your Apollo API key>
 # Compliance — appears in every email footer (CAN-SPAM / GDPR)
 MAILING_ADDRESS=Your Company Name, 123 Main St, City, ST 00000, USA
 
+# Optional bootstrap admin (auto-create/update on app start)
+BOOTSTRAP_ADMIN_EMAIL=admin@yourcompany.com
+BOOTSTRAP_ADMIN_PASSWORD=StrongPassword123
+BOOTSTRAP_ADMIN_NAME=Admin
+
 # Demo mode (set to true during testing, false in production)
 DEMO_MODE=true
 ```
@@ -88,6 +93,8 @@ DATABASE_URL=<your-url> npx prisma migrate deploy
 ```
 
 ### 5. Create the first admin user
+
+If `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` are set, the app auto-creates/updates an admin on startup (helpful for Railway deploys).
 
 ```bash
 cd backend
