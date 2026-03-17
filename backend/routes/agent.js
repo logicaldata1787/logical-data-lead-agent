@@ -222,6 +222,10 @@ router.post('/event-plan/execute', requireAuth, async (req, res) => {
     const status = /not found|no steps|contactIds/i.test(message) ? 400 : 500;
     return res.status(status).json({ ok: false, error: message });
   }
+});
+
+module.exports = router;
+module.exports._test = { resolveEventName, buildPlanFromPayload, resolveCandidateContacts, computeNextSendAt };
   const plan = createLeadGenerationPlan({
     eventName: resolvedEventName,
     targetPersona,

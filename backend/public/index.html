@@ -1584,6 +1584,39 @@ async function renderEventAgent() {
     return payload;
   }
 
+  function renderSummaryCards(data) {
+    const out = document.getElementById('event-agent-output');
+    const plan = data?.plan || data;
+    const execution = data?.execution;
+    const cadences = Array.isArray(plan?.outreachCadence) ? plan.outreachCadence : [];
+    const sourcing = Array.isArray(plan?.sourcingWorkflow) ? plan.sourcingWorkflow : [];
+
+    out.innerHTML = `
+      <div class="two-col">
+        <div class="card" style="background: var(--surface);">
+          <div class="card-title">Plan Summary</div>
+          <p><strong>Event:</strong> ${esc(plan?.event?.name || 'N/A')}</p>
+          <p><strong>Year:</strong> ${esc(plan?.event?.year || 'N/A')}</p>
+          <p><strong>Sourcing Stages:</strong> ${sourcing.length}</p>
+          <p><strong>Cadence Touches:</strong> ${cadences.length}</p>
+        </div>
+        ${execution ? `
+        <div class="card" style="background: var(--surface);">
+          <div class="card-title">Execution Summary</div>
+          <p><strong>Event ID:</strong> ${esc(execution.eventId || 'N/A')}</p>
+          <p><strong>Sequence ID:</strong> ${esc(execution.sequenceId || 'N/A')}</p>
+          <p><strong>Enrolled:</strong> ${Number(execution.enrolled || 0)}</p>
+          <p><strong>Skipped:</strong> ${Number(execution.skipped || 0)}</p>
+        </div>` : '<div class="card" style="background: var(--surface);"><div class="card-title">Execution</div><p class="text-muted">Plan generated only. Execute to create records.</p></div>'}
+      </div>
+      <div class="card mt-2" style="background: var(--surface);">
+        <div class="card-title">Cadence Preview</div>
+        ${cadences.length ? cadences.map((c) => `<div class="mt-1"><strong>Day ${Number(c.day || 0)} (${esc(c.channel)})</strong> — ${esc(c.objective || '')}</div>`).join('') : '<p class="text-muted">No cadence available.</p>'}
+      </div>
+      <details class="mt-2">
+        <summary class="fw-500" style="cursor:pointer;">Raw JSON</summary>
+        <pre style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin-top: .5rem;">${esc(JSON.stringify(data, null, 2))}</pre>
+      </details>`;
   function renderJson(title, data) {
     const out = document.getElementById('event-agent-output');
     out.innerHTML = `
@@ -1601,6 +1634,7 @@ async function renderEventAgent() {
       btn.disabled = true; btn.textContent = '⏳ Generating…';
       const data = await api('/agent/event-plan', { method: 'POST', body: JSON.stringify(payload) });
       state.pageData.eventAgentPlan = data;
+      renderSummaryCards(data);
       renderJson('Generated Plan', data);
       toast('Plan generated', 'success');
     } catch (err) {
@@ -1617,6 +1651,7 @@ async function renderEventAgent() {
     try {
       btn.disabled = true; btn.textContent = '⏳ Executing…';
       const data = await api('/agent/event-plan/execute', { method: 'POST', body: JSON.stringify(payload) });
+      renderSummaryCards(data);
       renderJson('Execution Result', data);
       toast(`Executed. Enrolled: ${data?.execution?.enrolled || 0}`, 'success');
     } catch (err) {
