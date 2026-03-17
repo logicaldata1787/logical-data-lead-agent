@@ -18,6 +18,7 @@ Built for Railway deployment with Postgres, Gmail OAuth, and Apollo.io integrati
 - **Pipeline** — 6-stage kanban: Prospect → Contacted → Replied → Qualified → Closed → Lost
 - **Apollo.io integration** — search people by domain/title, import as contacts
 - **Inbox** — view and mark replies; auto-advances pipeline stage
+- **Event Lead Agent** — generate a multi-channel event revenue plan (sourcing workflow, outreach cadence, KPIs, and closing checklist) from an event prompt
 
 ---
 
@@ -139,6 +140,7 @@ Each team member adds their SMTP account via **Email Accounts → Add SMTP Accou
 5. **Enroll contacts** — Enrollments page → Enroll → select contacts + sequence
 6. **Monitor** — Dashboard shows stats; Inbox shows replies; Pipeline shows stages
 7. **Unsubscribes** — handled automatically; link in every email footer
+8. **Agent execution (optional)** — call `POST /api/agent/event-plan/execute` to auto-create/reuse event + sequence and enroll selected contacts (transaction-safe)
 
 ---
 
@@ -179,6 +181,8 @@ Use these in sequence step subject/body:
 | GET | `/api/analytics` | Dashboard stats |
 | POST | `/api/apollo/search` | Apollo people search |
 | POST | `/api/apollo/import` | Import Apollo results |
+| POST | `/api/agent/event-plan` | Generate a tradeshow/conference revenue plan (sourcing, outreach, KPIs, and close workflow) |
+| POST | `/api/agent/event-plan/execute` | Execute generated plan transactionally; supports `reuseEventId`, `reuseSequenceId`, and contact enrollment |
 | GET | `/unsubscribe?token=...` | Unsubscribe (public) |
 
 ---

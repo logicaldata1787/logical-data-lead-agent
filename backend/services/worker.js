@@ -18,9 +18,9 @@ function addUnsubscribeFooter(html, token) {
 }
 
 async function processEnrollments() {
-  const prisma = require('../db/prisma');
   const now = new Date();
   try {
+    const prisma = require('../db/prisma');
     const due = await prisma.enrollment.findMany({
       where: { status: 'active', nextSendAt: { lte: now } },
       include: {
@@ -118,9 +118,10 @@ async function processEnrollments() {
 
 function startWorker(intervalMs = 60000) {
   console.log(`Email worker started (interval: ${intervalMs}ms)`);
-  setInterval(processEnrollments, intervalMs);
+  const runSafely = () => processEnrollments().catch((err) => console.error('Worker fatal error:', err.message));
+  setInterval(runSafely, intervalMs);
   // Run immediately on start
-  setTimeout(processEnrollments, 5000);
+  setTimeout(runSafely, 5000);
 }
 
 module.exports = { startWorker, processEnrollments, personalize, addUnsubscribeFooter };
