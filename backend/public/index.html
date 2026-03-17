@@ -1617,6 +1617,13 @@ async function renderEventAgent() {
         <summary class="fw-500" style="cursor:pointer;">Raw JSON</summary>
         <pre style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin-top: .5rem;">${esc(JSON.stringify(data, null, 2))}</pre>
       </details>`;
+  function renderJson(title, data) {
+    const out = document.getElementById('event-agent-output');
+    out.innerHTML = `
+      <div class="card" style="background: var(--surface);">
+        <div class="card-title">${esc(title)}</div>
+        <pre style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin-top: .5rem;">${esc(JSON.stringify(data, null, 2))}</pre>
+      </div>`;
   }
 
   document.getElementById('event-agent-generate-btn').addEventListener('click', async () => {
@@ -1628,6 +1635,7 @@ async function renderEventAgent() {
       const data = await api('/agent/event-plan', { method: 'POST', body: JSON.stringify(payload) });
       state.pageData.eventAgentPlan = data;
       renderSummaryCards(data);
+      renderJson('Generated Plan', data);
       toast('Plan generated', 'success');
     } catch (err) {
       toast(err?.data?.error || 'Failed to generate plan', 'error');
@@ -1644,6 +1652,7 @@ async function renderEventAgent() {
       btn.disabled = true; btn.textContent = '⏳ Executing…';
       const data = await api('/agent/event-plan/execute', { method: 'POST', body: JSON.stringify(payload) });
       renderSummaryCards(data);
+      renderJson('Execution Result', data);
       toast(`Executed. Enrolled: ${data?.execution?.enrolled || 0}`, 'success');
     } catch (err) {
       toast(err?.data?.error || 'Failed to execute plan', 'error');
