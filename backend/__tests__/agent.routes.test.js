@@ -40,6 +40,7 @@ function mockRes() {
 describe('agent routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    delete process.env.HUGGING_FACE_TOKEN;
   });
 
   test('POST /event-plan returns 400 for missing event name', async () => {
@@ -90,5 +91,36 @@ describe('agent routes', () => {
     expect(res.body.execution.skipped).toBe(1);
     expect(tx.enrollment.upsert).toHaveBeenCalledTimes(1);
     expect(tx.activityLog.create).toHaveBeenCalledTimes(1);
+  });
+
+  test('POST /media/generate returns real-time image url', async () => {
+    const handler = getHandler('/media/generate', 'post');
+    const req = {
+      body: { prompt: 'a sunset over mountains', type: 'image', language: 'both', seed: 7 },
+      user: { id: 'user-1' },
+    };
+    const res = mockRes();
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.realtime).toBe(true);
+    expect(res.body.download.url).toContain('image.pollinations.ai');
+  });
+
+  test('POST /media/generate video returns 503 when provider token missing', async () => {
+    const handler = getHandler('/media/generate', 'post');
+    const req = {
+      body: { prompt: 'festival clip', type: 'video', language: 'english' },
+      user: { id: 'user-1' },
+    };
+    const res = mockRes();
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.body.ok).toBe(false);
+    expect(res.body.reason).toBe('missing_hf_token');
   });
 });
