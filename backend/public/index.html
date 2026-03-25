@@ -1716,13 +1716,9 @@ async function renderMediaAgent() {
       return;
     }
 
-    const directDownloadLink = result?.download?.url
+    const downloadLink = result?.download?.url
       ? `<a class="btn btn-success btn-sm" href="${esc(result.download.url)}" download="${esc(result.download.filename || 'media-file')}">⬇️ Download</a>`
       : '';
-    const base64DownloadLink = result?.base64
-      ? `<button class="btn btn-success btn-sm" type="button" onclick="downloadGeneratedBase64('${esc(result.base64)}','${esc(result?.download?.filename || 'generated-media.mp4')}','${esc(result.contentType || 'video/mp4')}')">⬇️ Download</button>`
-      : '';
-    const downloadActions = directDownloadLink || base64DownloadLink;
 
     const imagePreview = result.type === 'image' && result?.download?.url
       ? `<div class="mt-2"><img src="${esc(result.download.url)}" alt="Generated image preview" style="max-width:100%;border:1px solid var(--border);border-radius:var(--radius);" /></div>`
@@ -1751,7 +1747,7 @@ async function renderMediaAgent() {
           <p><strong>Provider:</strong> ${esc(result.provider || 'N/A')}</p>
           <p><strong>Realtime:</strong> ${result.realtime ? 'Yes' : 'No'}</p>
           <div class="mt-1 flex items-center gap-1">
-            ${downloadActions || '<span class="text-muted">Direct download unavailable for this response.</span>'}
+            ${downloadLink || '<span class="text-muted">Direct download unavailable for this response.</span>'}
           </div>
         </div>
       </div>
@@ -1805,32 +1801,6 @@ async function renderMediaAgent() {
     renderOutput(null);
   });
 }
-
-window.downloadGeneratedBase64 = function(base64, filename, contentType) {
-  try {
-    const normalized = String(base64 || '').trim();
-    if (!normalized) {
-      toast('No downloadable media payload available', 'error');
-      return;
-    }
-
-    const binary = atob(normalized);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes], { type: contentType || 'application/octet-stream' });
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = filename || 'generated-media.bin';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(objectUrl);
-    toast('Download started', 'success');
-  } catch (_err) {
-    toast('Failed to download generated media', 'error');
-  }
-};
 
 // ─── MODAL HELPER ─────────────────────────────────────────────────────────────
 function showModal(title, bodyHTML, onConfirm, confirmLabel = 'Save') {
