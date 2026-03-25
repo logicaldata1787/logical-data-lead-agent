@@ -20,6 +20,7 @@ Built for Railway deployment with Postgres, Gmail OAuth, and Apollo.io integrati
 - **Inbox** — view and mark replies; auto-advances pipeline stage
 - **Event Lead Agent** — generate a multi-channel event revenue plan (sourcing workflow, outreach cadence, KPIs, and closing checklist) from an event prompt
 - **Media Generation Agent** — prompt-to-image in real time + prompt-to-video (with optional Hugging Face token), bilingual (Hindi/English/Both), and download-ready outputs
+- **Media Agent UI Page** — built-in frontend page to generate, preview, and download media outputs directly from the app
 
 ---
 
