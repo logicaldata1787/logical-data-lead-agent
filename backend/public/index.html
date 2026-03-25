@@ -314,6 +314,7 @@ const routes = {
   '#/users': 'users',
   '#/apollo': 'apollo',
   '#/event-agent': 'eventAgent',
+  '#/media-agent': 'mediaAgent',
 };
 
 function getPage() {
@@ -360,7 +361,7 @@ async function render() {
   const pageTitles = {
     dashboard: 'Dashboard', contacts: 'Contacts', events: 'Events',
     sequences: 'Sequences', enrollments: 'Enrollments', inbox: 'Inbox',
-    pipeline: 'Pipeline', emailAccounts: 'Email Accounts', users: 'Users', apollo: 'Apollo', eventAgent: 'Event Agent'
+    pipeline: 'Pipeline', emailAccounts: 'Email Accounts', users: 'Users', apollo: 'Apollo', eventAgent: 'Event Agent', mediaAgent: 'Media Agent'
   };
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = pageTitles[page] || '';
@@ -380,6 +381,7 @@ async function render() {
     users: renderUsers,
     apollo: renderApollo,
     eventAgent: renderEventAgent,
+    mediaAgent: renderMediaAgent,
   };
   if (fns[page]) await fns[page]();
 }
@@ -410,6 +412,7 @@ function renderShell() {
           <div class="sidebar-label">Tools</div>
           <a class="nav-item" data-route="#/apollo" href="#/apollo"><span class="nav-icon">🔍</span>Apollo</a>
           <a class="nav-item" data-route="#/event-agent" href="#/event-agent"><span class="nav-icon">🤖</span>Event Agent</a>
+          <a class="nav-item" data-route="#/media-agent" href="#/media-agent"><span class="nav-icon">🎬</span>Media Agent</a>
           <a class="nav-item" data-route="#/users" href="#/users"><span class="nav-icon">🧑‍💼</span>Users</a>
         </div>
         <div class="sidebar-user">
@@ -1617,6 +1620,8 @@ async function renderEventAgent() {
         <summary class="fw-500" style="cursor:pointer;">Raw JSON</summary>
         <pre style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin-top: .5rem;">${esc(JSON.stringify(data, null, 2))}</pre>
       </details>`;
+  }
+
   function renderJson(title, data) {
     const out = document.getElementById('event-agent-output');
     out.innerHTML = `
@@ -1659,6 +1664,141 @@ async function renderEventAgent() {
     } finally {
       btn.disabled = false; btn.textContent = '🚀 Execute Plan';
     }
+  });
+}
+
+async function renderMediaAgent() {
+  const content = document.getElementById('content');
+  const previous = state.pageData.mediaAgent || null;
+
+  content.innerHTML = `
+    <div class="card">
+      <div class="section-header">
+        <h2>Media Agent — Image / Video Generator</h2>
+      </div>
+      <p class="text-muted mb-1">Generate media from prompt in English, Hindi, or bilingual mode. Image mode returns a live URL; video mode needs backend provider token.</p>
+      <form id="media-agent-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prompt *</label>
+            <textarea name="prompt" required placeholder="Describe the image or video you want..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Mode</label>
+            <select name="type">
+              <option value="image">Image (Realtime URL)</option>
+              <option value="video">Video (Provider-based)</option>
+            </select>
+            <div class="mt-1 text-sm text-muted">Video generation needs <code>HUGGING_FACE_TOKEN</code> on backend.</div>
+            <label class="mt-2">Language</label>
+            <select name="language">
+              <option value="english">English</option>
+              <option value="hindi">Hindi</option>
+              <option value="both">Hindi + English</option>
+            </select>
+            <label class="mt-2">Seed (optional, image only)</label>
+            <input name="seed" type="number" placeholder="e.g., 42" />
+          </div>
+        </div>
+        <div class="inline-form mt-1">
+          <button class="btn btn-primary" type="submit" id="media-agent-generate-btn">✨ Generate</button>
+          <button class="btn btn-secondary" type="button" id="media-agent-clear-btn">Clear Result</button>
+        </div>
+      </form>
+      <hr class="divider" />
+      <div id="media-agent-output" class="text-sm text-muted">No media generated yet.</div>
+    </div>`;
+
+  function renderOutput(result) {
+    const out = document.getElementById('media-agent-output');
+    if (!result) {
+      out.innerHTML = 'No media generated yet.';
+      return;
+    }
+
+    const downloadLink = result?.download?.url
+      ? `<a class="btn btn-success btn-sm" href="${esc(result.download.url)}" download="${esc(result.download.filename || 'media-file')}">⬇️ Download</a>`
+      : '';
+
+    const imagePreview = result.type === 'image' && result?.download?.url
+      ? `<div class="mt-2"><img src="${esc(result.download.url)}" alt="Generated image preview" style="max-width:100%;border:1px solid var(--border);border-radius:var(--radius);" /></div>`
+      : '';
+
+    const videoHint = result.type === 'video' && result.base64
+      ? `<div class="alert alert-info mt-2">Video generated. Use the base64 payload below to save <code>${esc(result?.download?.filename || 'video.mp4')}</code>.</div>`
+      : '';
+
+    const failure = result.ok === false
+      ? `<div class="alert alert-warn">Generation warning: ${esc(result.error || 'Provider unavailable')}</div>`
+      : '';
+
+    out.innerHTML = `
+      ${failure}
+      <div class="two-col">
+        <div class="card" style="background: var(--surface);">
+          <div class="card-title">Request</div>
+          <p><strong>Type:</strong> ${esc(result.type || 'N/A')}</p>
+          <p><strong>Language:</strong> ${esc(result.language || 'N/A')}</p>
+          <p><strong>Prompt:</strong> ${esc(result.prompt || '')}</p>
+          <p><strong>Localized Prompt:</strong> ${esc(result.localizedPrompt || '')}</p>
+        </div>
+        <div class="card" style="background: var(--surface);">
+          <div class="card-title">Output</div>
+          <p><strong>Provider:</strong> ${esc(result.provider || 'N/A')}</p>
+          <p><strong>Realtime:</strong> ${result.realtime ? 'Yes' : 'No'}</p>
+          <div class="mt-1 flex items-center gap-1">
+            ${downloadLink || '<span class="text-muted">Direct download unavailable for this response.</span>'}
+          </div>
+        </div>
+      </div>
+      ${imagePreview}
+      ${videoHint}
+      <details class="mt-2">
+        <summary class="fw-500" style="cursor:pointer;">Raw JSON</summary>
+        <pre style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin-top: .5rem;">${esc(JSON.stringify(result, null, 2))}</pre>
+      </details>`;
+  }
+
+  renderOutput(previous);
+
+  document.getElementById('media-agent-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('media-agent-generate-btn');
+    const fd = new FormData(e.target);
+    const payload = {
+      prompt: String(fd.get('prompt') || '').trim(),
+      type: String(fd.get('type') || 'image').trim(),
+      language: String(fd.get('language') || 'english').trim(),
+    };
+    const seed = String(fd.get('seed') || '').trim();
+    if (seed) payload.seed = Number(seed);
+
+    if (!payload.prompt) {
+      toast('Prompt is required', 'error');
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+      btn.textContent = '⏳ Generating…';
+      const result = await api('/agent/media/generate', { method: 'POST', body: JSON.stringify(payload) });
+      state.pageData.mediaAgent = result;
+      renderOutput(result);
+      toast(`${result.type === 'image' ? 'Image' : 'Video'} generated`, 'success');
+    } catch (err) {
+      const fallback = err?.data || { ok: false, error: err?.data?.error || 'Media generation failed' };
+      state.pageData.mediaAgent = fallback;
+      renderOutput(fallback);
+      toast(fallback.error || 'Media generation failed', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✨ Generate';
+    }
+  });
+
+  document.getElementById('media-agent-clear-btn').addEventListener('click', () => {
+    state.pageData.mediaAgent = null;
+    renderOutput(null);
   });
 }
 

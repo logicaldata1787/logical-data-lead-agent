@@ -5,6 +5,14 @@ const router = express.Router();
 const prisma = require('../db/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { createLeadGenerationPlan, createExecutableSequenceSteps } = require('../services/eventLeadAgent');
+const {
+  sanitizePrompt,
+  normalizeLanguage,
+  buildLocalizedPrompt,
+  buildImageUrl,
+  generateWithHuggingFace,
+  buildDownloadName,
+} = require('../services/mediaGenerationAgent');
 
 function computeNextSendAt(delayDays) {
   const d = new Date();
@@ -103,23 +111,6 @@ async function resolveCandidateContacts(tx, payload) {
 
 router.post('/event-plan', requireAuth, async (req, res) => {
   const resolvedEventName = resolveEventName(req.body || {});
-const { requireAuth } = require('../middleware/auth');
-const { createLeadGenerationPlan } = require('../services/eventLeadAgent');
-
-router.post('/event-plan', requireAuth, async (req, res) => {
-  const {
-    eventName,
-    prompt,
-    targetPersona,
-    offer,
-    idealCustomerProfile,
-    coverageGoal,
-  } = req.body || {};
-
-  const resolvedEventName = typeof eventName === 'string' && eventName.trim()
-    ? eventName
-    : prompt;
-
   if (!resolvedEventName || typeof resolvedEventName !== 'string' || !resolvedEventName.trim()) {
     return res.status(400).json({ ok: false, error: 'eventName (or prompt) is required' });
   }
@@ -224,19 +215,76 @@ router.post('/event-plan/execute', requireAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
-module.exports._test = { resolveEventName, buildPlanFromPayload, resolveCandidateContacts, computeNextSendAt };
-  const plan = createLeadGenerationPlan({
-    eventName: resolvedEventName,
-    targetPersona,
-    offer,
-    idealCustomerProfile,
-    coverageGoal,
-    brandName: 'Logical Data Solution',
-    brandWebsite: 'logicaldatasolution.com',
-  });
+router.post('/media/generate', requireAuth, async (req, res) => {
+  const payload = req.body || {};
+  const prompt = sanitizePrompt(payload.prompt);
+  const mediaType = String(payload.type || 'image').toLowerCase() === 'video' ? 'video' : 'image';
+  const language = normalizeLanguage(payload.language);
 
-  return res.json(plan);
+  if (!prompt) {
+    return res.status(400).json({ ok: false, error: 'prompt is required' });
+  }
+
+  const localizedPrompt = buildLocalizedPrompt(prompt, language);
+  const downloadName = buildDownloadName(mediaType, language);
+
+  if (mediaType === 'image') {
+    const imageUrl = buildImageUrl(localizedPrompt, payload.seed);
+    return res.status(201).json({
+      ok: true,
+      type: 'image',
+      language,
+      prompt,
+      localizedPrompt,
+      download: {
+        url: imageUrl,
+        filename: `${downloadName}.png`,
+      },
+      realtime: true,
+      provider: 'pollinations',
+      note: 'Public endpoint intended for rapid prototyping and may rate limit under heavy traffic.',
+    });
+  }
+
+  try {
+    const videoResult = await generateWithHuggingFace(localizedPrompt, 'video');
+
+    if (!videoResult.ok) {
+      return res.status(503).json({
+        ok: false,
+        type: 'video',
+        language,
+        prompt,
+        localizedPrompt,
+        realtime: false,
+        error: videoResult.message,
+        reason: videoResult.reason,
+      });
+    }
+
+    return res.status(201).json({
+      ok: true,
+      type: 'video',
+      language,
+      prompt,
+      localizedPrompt,
+      provider: videoResult.provider,
+      model: videoResult.model,
+      realtime: false,
+      contentType: videoResult.contentType,
+      base64: videoResult.base64,
+      download: {
+        filename: `${downloadName}.${videoResult.extension}`,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      ok: false,
+      type: 'video',
+      error: err.message || 'Failed to generate video',
+    });
+  }
 });
 
 module.exports = router;
+module.exports._test = { resolveEventName, buildPlanFromPayload, resolveCandidateContacts, computeNextSendAt };
