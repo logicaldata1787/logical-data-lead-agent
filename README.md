@@ -19,6 +19,7 @@ Built for Railway deployment with Postgres, Gmail OAuth, and Apollo.io integrati
 - **Apollo.io integration** — search people by domain/title, import as contacts
 - **Inbox** — view and mark replies; auto-advances pipeline stage
 - **Event Lead Agent** — generate a multi-channel event revenue plan (sourcing workflow, outreach cadence, KPIs, and closing checklist) from an event prompt
+- **Media Generation Agent** — prompt-to-image in real time + prompt-to-video (with optional Hugging Face token), bilingual (Hindi/English/Both), and download-ready outputs
 
 ---
 
@@ -148,7 +149,7 @@ Each team member adds their SMTP account via **Email Accounts → Add SMTP Accou
 6. **Monitor** — Dashboard shows stats; Inbox shows replies; Pipeline shows stages
 7. **Unsubscribes** — handled automatically; link in every email footer
 8. **Agent execution (optional)** — call `POST /api/agent/event-plan/execute` to auto-create/reuse event + sequence and enroll selected contacts (transaction-safe)
-8. **Agent execution (optional)** — call `POST /api/agent/event-plan/execute` to auto-create event, sequence, and enroll selected contacts
+9. **Media generation (optional)** — call `POST /api/agent/media/generate` with `{ prompt, type: "image"|"video", language: "english"|"hindi"|"both" }` for generation + downloadable output metadata
 
 ---
 
@@ -191,6 +192,7 @@ Use these in sequence step subject/body:
 | POST | `/api/apollo/import` | Import Apollo results |
 | POST | `/api/agent/event-plan` | Generate a tradeshow/conference revenue plan (sourcing, outreach, KPIs, and close workflow) |
 | POST | `/api/agent/event-plan/execute` | Execute generated plan transactionally; supports `reuseEventId`, `reuseSequenceId`, and contact enrollment |
+| POST | `/api/agent/media/generate` | Generate image/video from prompt with Hindi/English/Both prompt modes and download metadata |
 | GET | `/unsubscribe?token=...` | Unsubscribe (public) |
 
 ---
