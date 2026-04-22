@@ -256,6 +256,10 @@
     .checkbox-item input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
     .progress-bar-wrap { background: var(--border); border-radius: 999px; height: 6px; overflow: hidden; }
     .progress-bar { background: var(--accent); height: 100%; border-radius: 999px; transition: width .3s; }
+    .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .list-stack { display: flex; flex-direction: column; gap: .5rem; }
+    .mini-card { border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem; background: var(--surface); }
+    .mini-card h4 { font-size: .875rem; margin-bottom: .25rem; }
   </style>
 </head>
 <body>
@@ -315,6 +319,7 @@ const routes = {
   '#/apollo': 'apollo',
   '#/event-agent': 'eventAgent',
   '#/media-agent': 'mediaAgent',
+  '#/healthcare-suite': 'healthcareSuite',
 };
 
 function getPage() {
@@ -361,7 +366,7 @@ async function render() {
   const pageTitles = {
     dashboard: 'Dashboard', contacts: 'Contacts', events: 'Events',
     sequences: 'Sequences', enrollments: 'Enrollments', inbox: 'Inbox',
-    pipeline: 'Pipeline', emailAccounts: 'Email Accounts', users: 'Users', apollo: 'Apollo', eventAgent: 'Event Agent', mediaAgent: 'Media Agent'
+    pipeline: 'Pipeline', emailAccounts: 'Email Accounts', users: 'Users', apollo: 'Apollo', eventAgent: 'Event Agent', mediaAgent: 'Media Agent', healthcareSuite: 'Healthcare Suite'
   };
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = pageTitles[page] || '';
@@ -382,6 +387,7 @@ async function render() {
     apollo: renderApollo,
     eventAgent: renderEventAgent,
     mediaAgent: renderMediaAgent,
+    healthcareSuite: renderHealthcareSuite,
   };
   if (fns[page]) await fns[page]();
 }
@@ -413,6 +419,7 @@ function renderShell() {
           <a class="nav-item" data-route="#/apollo" href="#/apollo"><span class="nav-icon">🔍</span>Apollo</a>
           <a class="nav-item" data-route="#/event-agent" href="#/event-agent"><span class="nav-icon">🤖</span>Event Agent</a>
           <a class="nav-item" data-route="#/media-agent" href="#/media-agent"><span class="nav-icon">🎬</span>Media Agent</a>
+          <a class="nav-item" data-route="#/healthcare-suite" href="#/healthcare-suite"><span class="nav-icon">🏥</span>Healthcare Suite</a>
           <a class="nav-item" data-route="#/users" href="#/users"><span class="nav-icon">🧑‍💼</span>Users</a>
         </div>
         <div class="sidebar-user">
@@ -1664,6 +1671,140 @@ async function renderEventAgent() {
     } finally {
       btn.disabled = false; btn.textContent = '🚀 Execute Plan';
     }
+  });
+}
+
+
+function getHealthcareData() {
+  const fallback = {
+    doctors: [
+      { id: 'd1', name: 'Dr. Aarav Sharma', specialty: 'Cardiology', experience: '14 yrs', city: 'Bangalore' },
+      { id: 'd2', name: 'Dr. Emily Johnson', specialty: 'Dermatology', experience: '10 yrs', city: 'New York' },
+    ],
+    patients: [
+      { id: 'p1', name: 'Riya Nair', age: 32, condition: 'Migraine', phone: '+91-90000-00001' },
+      { id: 'p2', name: 'Michael Reed', age: 41, condition: 'Type 2 Diabetes', phone: '+1-555-102-7788' },
+    ],
+    appointments: [
+      { id: 'a1', patientId: 'p1', doctorId: 'd1', date: '2026-04-24', slot: '10:30', type: 'Video', status: 'Scheduled' },
+      { id: 'a2', patientId: 'p2', doctorId: 'd2', date: '2026-04-25', slot: '15:00', type: 'Clinic', status: 'Scheduled' },
+    ]
+  };
+
+  try {
+    const raw = localStorage.getItem('healthcareSuiteData');
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (!parsed.doctors || !parsed.patients || !parsed.appointments) return fallback;
+    return parsed;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function saveHealthcareData(data) {
+  localStorage.setItem('healthcareSuiteData', JSON.stringify(data));
+}
+
+async function renderHealthcareSuite() {
+  const content = document.getElementById('content');
+  const data = getHealthcareData();
+
+  const patientById = Object.fromEntries(data.patients.map(p => [p.id, p]));
+  const doctorById = Object.fromEntries(data.doctors.map(d => [d.id, d]));
+
+  content.innerHTML = `
+    <div class="section-header">
+      <h2>Clinic + Patient Experience App (Practo / Eka style starter)</h2>
+      <div class="toolbar">
+        <button class="btn btn-secondary" id="seed-health-demo">Reload Demo Data</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">🧑‍⚕️</div><div class="stat-label">Doctors</div><div class="stat-value">${data.doctors.length}</div></div>
+      <div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-label">Patients</div><div class="stat-value">${data.patients.length}</div></div>
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-label">Appointments</div><div class="stat-value">${data.appointments.length}</div></div>
+      <div class="stat-card"><div class="stat-icon">🎥</div><div class="stat-label">Teleconsults</div><div class="stat-value">${data.appointments.filter(a => a.type === 'Video').length}</div></div>
+    </div>
+
+    <div class="health-grid">
+      <div class="card">
+        <div class="section-header"><h2>Doctors</h2></div>
+        <div class="list-stack">
+          ${data.doctors.map(d => `<div class="mini-card"><h4>${esc(d.name)}</h4><div class="text-sm text-muted">${esc(d.specialty)} • ${esc(d.experience)} • ${esc(d.city)}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-header"><h2>Patients</h2></div>
+        <div class="list-stack">
+          ${data.patients.map(p => `<div class="mini-card"><h4>${esc(p.name)}</h4><div class="text-sm text-muted">Age ${esc(String(p.age))} • ${esc(p.condition)} • ${esc(p.phone)}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-2">
+      <div class="section-header"><h2>Book Appointment</h2></div>
+      <form id="book-appointment-form" class="form-row-3">
+        <div class="form-group">
+          <label>Patient</label>
+          <select name="patientId" required>${data.patients.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select>
+        </div>
+        <div class="form-group">
+          <label>Doctor</label>
+          <select name="doctorId" required>${data.doctors.map(d => `<option value="${esc(d.id)}">${esc(d.name)} (${esc(d.specialty)})</option>`).join('')}</select>
+        </div>
+        <div class="form-group">
+          <label>Consultation Type</label>
+          <select name="type"><option>Video</option><option>Clinic</option></select>
+        </div>
+        <div class="form-group"><label>Date</label><input name="date" type="date" required /></div>
+        <div class="form-group"><label>Time</label><input name="slot" type="time" required /></div>
+        <div class="form-group" style="display:flex;align-items:flex-end;"><button class="btn btn-primary" type="submit">+ Add Appointment</button></div>
+      </form>
+    </div>
+
+    <div class="card mt-2">
+      <div class="section-header"><h2>Upcoming Appointments</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>
+            ${data.appointments.map(a => `<tr><td>${esc(a.date)} ${esc(a.slot)}</td><td>${esc(patientById[a.patientId]?.name || '-')}</td><td>${esc(doctorById[a.doctorId]?.name || '-')}</td><td>${esc(a.type)}</td><td><span class="badge badge-default">${esc(a.status)}</span></td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('seed-health-demo').addEventListener('click', () => {
+    localStorage.removeItem('healthcareSuiteData');
+    toast('Demo clinic data reloaded', 'info');
+    renderHealthcareSuite();
+  });
+
+  document.getElementById('book-appointment-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {
+      id: `a${Date.now()}`,
+      patientId: String(fd.get('patientId')),
+      doctorId: String(fd.get('doctorId')),
+      type: String(fd.get('type') || 'Video'),
+      date: String(fd.get('date') || ''),
+      slot: String(fd.get('slot') || ''),
+      status: 'Scheduled',
+    };
+
+    if (!payload.date || !payload.slot) {
+      toast('Date and time are required', 'error');
+      return;
+    }
+
+    data.appointments.unshift(payload);
+    saveHealthcareData(data);
+    toast('Appointment created', 'success');
+    renderHealthcareSuite();
   });
 }
 
