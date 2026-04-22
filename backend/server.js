@@ -21,6 +21,7 @@ const analyticsRoutes = require('./routes/analytics');
 const apolloRoutes = require('./routes/apollo');
 const emailSettingsRoutes = require('./routes/emailSettings');
 const agentRoutes = require('./routes/agent');
+const healthcareRoutes = require('./routes/healthcare');
 const { isDemoMode } = require('./services/mailer');
 const { startWorker } = require('./services/worker');
 const { ensureBootstrapAdmin } = require('./services/bootstrap');
@@ -67,6 +68,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/apollo', apolloRoutes);
 app.use('/api/email-settings', emailSettingsRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/healthcare', healthcareRoutes);
 
 // Unsubscribe (public, no /api prefix so link works)
 app.use('/unsubscribe', unsubscribeRoutes);
@@ -77,9 +79,32 @@ app.use('/api/unsubscribe', unsubscribeRoutes);
 app.use('/api/leads', (req, res) => res.json({ ok: true, message: 'Use /api/contacts' }));
 app.use('/api/campaigns', (req, res) => res.json({ ok: true, message: 'Use /api/enrollments' }));
 
-// SPA fallback — serve index.html for all non-API routes
-app.get('*', (req, res) => {
+// Public marketing pages
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+app.get('/pricing', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'pricing.html'));
+});
+
+app.get('/features', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'features.html'));
+});
+
+app.get('/demo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'demo.html'));
+});
+
+app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// SPA fallback — serve app shell for app routes and landing for website routes
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) return res.status(404).json({ ok: false, error: 'Not found' });
+  if (req.path.startsWith('/app')) return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  return res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
 
 // Start email sending worker and listen only when run directly
