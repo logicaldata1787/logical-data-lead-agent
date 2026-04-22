@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareFlow SaaS — Healthcare Growth Platform</title>
+  <style>
+    :root { --bg:#0b1020; --card:#121a31; --muted:#98a2b3; --text:#eef2ff; --accent:#6366f1; --line:#27314f; }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+    .nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+    .nav a{color:var(--text);text-decoration:none;margin-left:18px;font-size:14px}
+    .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:600}
+    .hero{padding:80px 0 50px;display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
+    h1{font-size:44px;line-height:1.1;margin:0 0 14px} p{color:var(--muted);line-height:1.6}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:30px 0 70px}
+    .section{padding:24px 0 50px}
+    .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .price{font-size:36px;font-weight:700}
+    footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-size:13px}
+    @media(max-width:900px){.hero,.grid,.pricing{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="nav">
+      <strong>🏥 CareFlow SaaS</strong>
+      <div>
+        <a href="/features">Features</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/app#/login">Login</a>
+        <a class="btn" href="/app#/login">Start Free Trial</a>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div>
+        <h1>All-in-one healthcare SaaS for clinics and medical teams.</h1>
+        <p>Run your practice with online booking, patient CRM, teleconsultation workflows, campaign automation, and analytics in one platform.</p>
+        <p>
+          <a class="btn" href="/app#/login">Open App</a>
+          <a style="margin-left:12px;color:#c7d2fe" href="/pricing">See Pricing →</a>
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">What you get</h3>
+        <ul>
+          <li>Doctor/patient lifecycle management</li>
+          <li>Appointment + teleconsult support</li>
+          <li>Email outreach automation</li>
+          <li>Sales + operations dashboards</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Built for modern healthcare teams</h2>
+      <div class="grid">
+        <div class="card"><h3>Patient Acquisition</h3><p>Landing pages, referral campaigns, and outreach sequences that convert visits into appointments.</p></div>
+        <div class="card"><h3>Operations</h3><p>Unified view of doctors, patients, events, pipelines, and communication workflows.</p></div>
+        <div class="card"><h3>Revenue Intelligence</h3><p>Track appointment funnel conversion, response rates, and team productivity in real time.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Simple pricing for every stage</h2>
+      <div class="pricing">
+        <div class="card"><h3>Starter</h3><div class="price">$39</div><p>/month per clinic</p></div>
+        <div class="card" style="border-color:#6366f1"><h3>Growth</h3><div class="price">$99</div><p>/month per clinic</p></div>
+        <div class="card"><h3>Enterprise</h3><div class="price">Custom</div><p>Multi-location + SSO</p></div>
+      </div>
+    </section>
+
+    <footer>© 2026 CareFlow SaaS. Built on Logical Data Lead Agent platform.</footer>
+  </div>
+</body>
+</html>
